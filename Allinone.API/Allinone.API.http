@@ -1,0 +1,24 @@
+@Allinone.API_HostAddress = http://localhost:5042
+@your_token_here = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJtaWtvIiwianRpIjoiMWZjNjEwM2MtMGUxMi00MWFlLWFkYTMtM2ExM2VlNTUzNjlhIiwiZXhwIjoxNzQ0MjA4MzQyLCJpc3MiOiJ5b3VySXNzdWVyIiwiYXVkIjoieW91ckF1ZGllbmNlIn0.AHFzqJOyx2Dpc5d6fqXakjRn2s5-c7xtpokjnjbCPKU
+
+### Create a new product
+POST {{Allinone.API_HostAddress}}/member/loginV2
+Content-Type: application/json
+
+{
+  "name": "miko",
+  "password": "miko"  
+}
+
+###
+
+### Use JWT to call protected POST endpoint
+GET {{Allinone.API_HostAddress}}/todolist
+Content-Type: application/json
+Authorization: Bearer aaaaaaa
+
+{
+  "message": "Testing .http file with headers"
+}
+
+###
