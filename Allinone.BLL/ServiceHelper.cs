@@ -1,10 +1,17 @@
-﻿using Allinone.Domain.Audits;
+﻿using Allinone.Domain;
+using Allinone.Domain.Audits;
 
 namespace Allinone.BLL
 {
     public class ServiceHelper
     {
         public static T SetAuditAddMemberFields<T>(T entity, int memberId) where T : IAuditableMember
+        {
+            entity.MemberID = memberId;
+            return entity;
+        }
+
+        public static T SetAddMemberFields<T>(T entity, int memberId) where T : IMember
         {
             entity.MemberID = memberId;
             return entity;

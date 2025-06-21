@@ -1,0 +1,9 @@
+remark: remember cd to solution root path
+
+
+dotnet ef migrations add AddTableDiaryActivity --project Allinone.DLL --startup-project Allinone.API
+dotnet ef database update --project Allinone.DLL --startup-project Allinone.API
+
+
+dotnet ef migrations add UpdateColumnsTableDiary --project Allinone.DLL --startup-project Allinone.API
+dotnet ef database update AddTableDiaryActivity --project Allinone.DLL --startup-project Allinone.API

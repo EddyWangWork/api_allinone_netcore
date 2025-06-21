@@ -11,6 +11,15 @@
     //TodolistDone
     public class TodolistDoneNotFoundException(string message = "TodolistDone not found") : Exception(message) { }
 
+    //Diary
+    public class DiaryActivityNotFoundException(string message = "Diary Activity not found") : Exception(message) { }
+    public class DiaryEmotionNotFoundException(string message = "Diary Emotion not found") : Exception(message) { }
+    public class DiaryFoodNotFoundException(string message = "Diary Food not found") : Exception(message) { }
+    public class DiaryLocationNotFoundException(string message = "Diary Location not found") : Exception(message) { }
+    public class DiaryBookNotFoundException(string message = "Diary Book not found") : Exception(message) { }
+    public class DiaryWeatherNotFoundException(string message = "Diary Weather not found") : Exception(message) { }
+    public class DiaryNotFoundException(string message = "Diary not found") : Exception(message) { }
+
     //DSAccount
     public class DSAccountNotFoundException(string message = "DS Account not found") : Exception(message) { }
 

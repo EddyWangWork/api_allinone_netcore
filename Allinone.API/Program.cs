@@ -2,6 +2,7 @@ using Allinone.API.Events;
 using Allinone.API.Filters;
 using Allinone.API.Middleware;
 using Allinone.BLL;
+using Allinone.BLL.Diarys;
 using Allinone.BLL.DS.Accounts;
 using Allinone.BLL.DS.DSItems;
 using Allinone.BLL.DS.Transactions;
@@ -32,6 +33,7 @@ builder.Services.AddSingleton<IMapModel, MapModel>();
 
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
+#region Repositories_Services
 builder.Services.AddScoped<IMemberService, MemberService>();
 builder.Services.AddScoped<ITodolistService, TodolistService>();
 builder.Services.AddScoped<ITodolistDoneService, TodolistDoneService>();
@@ -47,6 +49,13 @@ builder.Services.AddScoped<IShopDiaryService, ShopDiaryService>();
 builder.Services.AddScoped<ITripService, TripService>();
 builder.Services.AddScoped<ITripDetailTypeService, TripDetailTypeService>();
 builder.Services.AddScoped<ITripDetailService, TripDetailService>();
+builder.Services.AddScoped<IDiaryActivityService, DiaryActivityService>();
+builder.Services.AddScoped<IDiaryEmotionService, DiaryEmotionService>();
+builder.Services.AddScoped<IDiaryFoodService, DiaryFoodService>();
+builder.Services.AddScoped<IDiaryLocationService, DiaryLocationService>();
+builder.Services.AddScoped<IDiaryBookService, DiaryBookService>();
+builder.Services.AddScoped<IDiaryWeatherService, DiaryWeatherService>();
+builder.Services.AddScoped<IDiaryService, DiaryService>();
 
 builder.Services.AddScoped<IMemberRepository, MemberRepository>();
 builder.Services.AddScoped<ITodolistRepository, TodolistRepository>();
@@ -62,11 +71,21 @@ builder.Services.AddScoped<IShopDiaryRepository, ShopDiaryRepository>();
 builder.Services.AddScoped<ITripRepository, TripRepository>();
 builder.Services.AddScoped<ITripDetailTypeRepository, TripDetailTypeRepository>();
 builder.Services.AddScoped<ITripDetailRepository, TripDetailRepository>();
+builder.Services.AddScoped<IDiaryActivityRepository, DiaryActivityRepository>();
+builder.Services.AddScoped<IDiaryEmotionRepository, DiaryEmotionRepository>();
+builder.Services.AddScoped<IDiaryFoodRepository, DiaryFoodRepository>();
+builder.Services.AddScoped<IDiaryLocationRepository, DiaryLocationRepository>();
+builder.Services.AddScoped<IDiaryBookRepository, DiaryBookRepository>();
+builder.Services.AddScoped<IDiaryWeatherRepository, DiaryWeatherRepository>();
+builder.Services.AddScoped<IDiaryRepository, DiaryRepository>();
+#endregion
 
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<MemoryCacheHelper>();
 
-builder.Services.AddDbContext<DSContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("DSConnection")));
+builder.Services.AddDbContext<DSContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DSConnection"),
+    sql => sql.MigrationsAssembly("Allinone.DLL")));
 
 builder.Services.Configure<ApiBehaviorOptions>(options =>
 {

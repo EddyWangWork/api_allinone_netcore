@@ -40,6 +40,13 @@ namespace Allinone.API.Filters
                 case TripNotFoundException:
                 case TripDetailTypeNotFoundException:
                 case TripDetailNotFoundException:
+                case DiaryActivityNotFoundException:
+                case DiaryEmotionNotFoundException:
+                case DiaryFoodNotFoundException:
+                case DiaryLocationNotFoundException:
+                case DiaryBookNotFoundException:
+                case DiaryWeatherNotFoundException:
+                case DiaryNotFoundException:
                     {
                         //response.Message = context.Exception.Message;
                         response.Message = errorMessage;

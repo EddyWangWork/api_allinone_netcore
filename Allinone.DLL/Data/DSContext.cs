@@ -1,4 +1,11 @@
-﻿using Allinone.Domain.DS.Accounts;
+﻿using Allinone.Domain.Diarys;
+using Allinone.Domain.Diarys.DiaryActivitys;
+using Allinone.Domain.Diarys.DiaryBooks;
+using Allinone.Domain.Diarys.DiaryEmotions;
+using Allinone.Domain.Diarys.DiaryFoods;
+using Allinone.Domain.Diarys.DiaryLocations;
+using Allinone.Domain.Diarys.DiaryWeathers;
+using Allinone.Domain.DS.Accounts;
 using Allinone.Domain.DS.DSItems;
 using Allinone.Domain.DS.Transactions;
 using Allinone.Domain.Kanbans;
@@ -31,6 +38,13 @@ namespace Allinone.DLL.Data
         public DbSet<Shop> Shop { get; set; }
         public DbSet<ShopType> ShopType { get; set; }
         public DbSet<ShopDiary> ShopDiary { get; set; }
+        public DbSet<DiaryActivity> DiaryActivity { get; set; }
+        public DbSet<DiaryEmotion> DiaryEmotion { get; set; }
+        public DbSet<DiaryFood> DiaryFood { get; set; }
+        public DbSet<DiaryLocation> DiaryLocation { get; set; }
+        public DbSet<DiaryBook> DiaryBook { get; set; }
+        public DbSet<DiaryWeather> DiaryWeather { get; set; }
+        public DbSet<Diary> Diary { get; set; }
 
         //protected override void OnModelCreating(ModelBuilder modelBuilder)
         //{

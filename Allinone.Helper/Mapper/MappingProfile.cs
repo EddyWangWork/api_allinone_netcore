@@ -1,4 +1,11 @@
-﻿using Allinone.Domain.DS.Accounts;
+﻿using Allinone.Domain.Diarys;
+using Allinone.Domain.Diarys.DiaryActivitys;
+using Allinone.Domain.Diarys.DiaryBooks;
+using Allinone.Domain.Diarys.DiaryEmotions;
+using Allinone.Domain.Diarys.DiaryFoods;
+using Allinone.Domain.Diarys.DiaryLocations;
+using Allinone.Domain.Diarys.DiaryWeathers;
+using Allinone.Domain.DS.Accounts;
 using Allinone.Domain.DS.DSItems;
 using Allinone.Domain.DS.Transactions;
 using Allinone.Domain.Kanbans;
@@ -69,6 +76,16 @@ namespace Allinone.Helper.Mapper
             CreateMap<TripAddReq, Trip>();
             CreateMap<TripDetailTypeAddReq, TripDetailType>();
             CreateMap<TripDetailAddReq, TripDetail>();
+
+            CreateMap<DiaryActivityAddReq, DiaryActivity>();
+            CreateMap<DiaryEmotionAddReq, DiaryEmotion>();
+            CreateMap<DiaryFoodAddReq, DiaryFood>();
+            CreateMap<DiaryLocationAddReq, DiaryLocation>();
+            CreateMap<DiaryBookAddReq, DiaryBook>();
+            CreateMap<DiaryWeatherAddReq, DiaryWeather>();
+            CreateMap<Diary, DiaryDto>();
+
+            CreateMap<DiaryAddReq, Diary>();
         }
     }
 }
