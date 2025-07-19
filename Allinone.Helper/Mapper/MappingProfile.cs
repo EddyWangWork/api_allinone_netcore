@@ -1,9 +1,11 @@
 ﻿using Allinone.Domain.Diarys;
 using Allinone.Domain.Diarys.DiaryActivitys;
 using Allinone.Domain.Diarys.DiaryBooks;
+using Allinone.Domain.Diarys.DiaryDetails;
 using Allinone.Domain.Diarys.DiaryEmotions;
 using Allinone.Domain.Diarys.DiaryFoods;
 using Allinone.Domain.Diarys.DiaryLocations;
+using Allinone.Domain.Diarys.DiaryTypes;
 using Allinone.Domain.Diarys.DiaryWeathers;
 using Allinone.Domain.DS.Accounts;
 using Allinone.Domain.DS.DSItems;
@@ -86,6 +88,9 @@ namespace Allinone.Helper.Mapper
             CreateMap<Diary, DiaryDto>();
 
             CreateMap<DiaryAddReq, Diary>();
+            CreateMap<DiaryTypeAddReq, DiaryType>();
+            CreateMap<DiaryDetailAddReq, DiaryDetail>();
+            CreateMap<DiaryDetail, DiaryDetailDto>();
         }
     }
 }

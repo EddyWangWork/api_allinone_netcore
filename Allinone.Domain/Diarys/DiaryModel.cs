@@ -1,4 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Allinone.Domain.Diarys.DiaryDetails;
+using Allinone.Domain.Enums;
+using System.ComponentModel.DataAnnotations;
 
 namespace Allinone.Domain.Diarys
 {
@@ -25,11 +27,22 @@ namespace Allinone.Domain.Diarys
         public DateTime Date { get; set; }
         public string Title { get; set; }
         public string Description { get; set; }
-        public List<string> Activitys { get; set; }
-        public List<string> Emotions { get; set; }
-        public List<string> Foods { get; set; }
-        public List<string> Locations { get; set; }
-        public List<string> Books { get; set; }
-        public List<string> Weathers { get; set; }
+        public List<EnumModel> Activitys { get; set; }
+        public List<EnumModel> Emotions { get; set; }
+        public List<EnumModel> Foods { get; set; }
+        public List<EnumModel> Locations { get; set; }
+        public List<EnumModel> Books { get; set; }
+        public List<EnumModel> Weathers { get; set; }
+        public List<DiaryDetailDto> DiaryDetailDtos { get; set; } = new List<DiaryDetailDto>();
+    }
+
+    public class DiaryInfoDto
+    {
+        public List<EnumModel> Activitys { get; set; }
+        public List<EnumModel> Emotions { get; set; }
+        public List<EnumModel> Foods { get; set; }
+        public List<EnumModel> Locations { get; set; }
+        public List<EnumModel> Books { get; set; }
+        public List<EnumModel> Weathers { get; set; }
     }
 }

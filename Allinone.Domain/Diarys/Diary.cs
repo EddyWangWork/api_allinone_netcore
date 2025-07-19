@@ -1,4 +1,5 @@
-﻿using Allinone.Domain.Members;
+﻿using Allinone.Domain.Diarys.DiaryDetails;
+using Allinone.Domain.Members;
 using System.ComponentModel.DataAnnotations;
 
 namespace Allinone.Domain.Diarys
@@ -16,6 +17,8 @@ namespace Allinone.Domain.Diarys
         public string? LocationIDs { get; set; }
         public string? BookIDs { get; set; }
         public string? WeatherIDs { get; set; }
+
+        public ICollection<DiaryDetail> DiaryDetails { get; set; }
 
         public int MemberID { get; set; }
         public Member Member { get; set; }

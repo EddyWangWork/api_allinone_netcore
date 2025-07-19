@@ -5,5 +5,5 @@ dotnet ef migrations add AddTableDiaryActivity --project Allinone.DLL --startup-
 dotnet ef database update --project Allinone.DLL --startup-project Allinone.API
 
 
-dotnet ef migrations add UpdateColumnsTableDiary --project Allinone.DLL --startup-project Allinone.API
-dotnet ef database update AddTableDiaryActivity --project Allinone.DLL --startup-project Allinone.API
+dotnet ef migrations add FixCascadeCascadeCorrection --project Allinone.DLL --startup-project Allinone.API
+dotnet ef database update FixCascadeCascadeCorrection --project Allinone.DLL --startup-project Allinone.API

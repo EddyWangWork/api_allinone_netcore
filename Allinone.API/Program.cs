@@ -56,6 +56,8 @@ builder.Services.AddScoped<IDiaryLocationService, DiaryLocationService>();
 builder.Services.AddScoped<IDiaryBookService, DiaryBookService>();
 builder.Services.AddScoped<IDiaryWeatherService, DiaryWeatherService>();
 builder.Services.AddScoped<IDiaryService, DiaryService>();
+builder.Services.AddScoped<IDiaryTypeService, DiaryTypeService>();
+builder.Services.AddScoped<IDiaryDetailService, DiaryDetailService>();
 
 builder.Services.AddScoped<IMemberRepository, MemberRepository>();
 builder.Services.AddScoped<ITodolistRepository, TodolistRepository>();
@@ -78,6 +80,8 @@ builder.Services.AddScoped<IDiaryLocationRepository, DiaryLocationRepository>();
 builder.Services.AddScoped<IDiaryBookRepository, DiaryBookRepository>();
 builder.Services.AddScoped<IDiaryWeatherRepository, DiaryWeatherRepository>();
 builder.Services.AddScoped<IDiaryRepository, DiaryRepository>();
+builder.Services.AddScoped<IDiaryTypeRepository, DiaryTypeRepository>();
+builder.Services.AddScoped<IDiaryDetailRepository, DiaryDetailRepository>();
 #endregion
 
 builder.Services.AddMemoryCache();

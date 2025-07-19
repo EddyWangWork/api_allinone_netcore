@@ -19,6 +19,12 @@
     public class DiaryBookNotFoundException(string message = "Diary Book not found") : Exception(message) { }
     public class DiaryWeatherNotFoundException(string message = "Diary Weather not found") : Exception(message) { }
     public class DiaryNotFoundException(string message = "Diary not found") : Exception(message) { }
+    public class DiaryTypeNotFoundException(string message = "Diary type not found") : Exception(message) { }
+    public class DiaryDetailNotFoundException(string message = "Diary detail not found") : Exception(message) { }
+
+    public class DiaryDateDuplicatedException(string message = "Diary date already exist") : Exception(message) { }
+    public class DiaryBadRequestException(string message = "Diary not valid") : Exception(message) { }
+    public class DiaryTypeBadRequestException(string message = "Diary Type not valid") : Exception(message) { }
 
     //DSAccount
     public class DSAccountNotFoundException(string message = "DS Account not found") : Exception(message) { }

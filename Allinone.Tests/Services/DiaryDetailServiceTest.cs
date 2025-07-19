@@ -19,9 +19,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Allinone.Tests.Services
 {
-    public class DiaryServiceTest
+    public class DiaryDetailServiceTest
     {
-        private readonly DiaryService _diaryService;
+        private readonly DiaryDetailService _diaryDetailService;
 
         private readonly int _memberId = 1;
 
@@ -74,7 +74,7 @@ namespace Allinone.Tests.Services
         private readonly string _diaryWeatherName = "diaryWeatherName";
         private readonly string _diaryWeatherDesc = "diaryWeatherDesc";
 
-        public DiaryServiceTest()
+        public DiaryDetailServiceTest()
         {
             BaseBLL.MemberId = _memberId;
 
@@ -164,41 +164,23 @@ namespace Allinone.Tests.Services
             var mapModel = services.BuildServiceProvider().GetRequiredService<IMapModel>();
             var memoryCacheHelper = services.BuildServiceProvider().GetRequiredService<MemoryCacheHelper>();
 
-            var diaryActivityRepository = new DiaryActivityRepository(context);
-            var diaryEmotionRepository = new DiaryEmotionRepository(context);
-            var diaryFoodRepository = new DiaryFoodRepository(context);
-            var diaryLocationRepository = new DiaryLocationRepository(context);
-            var diaryBookRepository = new DiaryBookRepository(context);
-            var diaryWeatherRepository = new DiaryWeatherRepository(context);
             var diaryRepository = new DiaryRepository(context);
+            var diaryTypeRepository = new DiaryTypeRepository(context);
+            var diaryDetailRepository = new DiaryDetailRepository(context);
 
-            _diaryService = new DiaryService(
+            _diaryDetailService = new DiaryDetailService(
                 diaryRepository,
-                diaryActivityRepository,
-                diaryEmotionRepository,
-                diaryFoodRepository,
-                diaryLocationRepository,
-                diaryBookRepository,
-                diaryWeatherRepository,
+                diaryTypeRepository,
+                diaryDetailRepository,
                 memoryCacheHelper,
                 mapModel);
-        }
-
-        [Fact]
-        public async Task GetAllDiaryInfoAsync_Returns_Success()
-        {
-            // Act
-            var result = await _diaryService.GetAllDiaryInfoAsync();
-
-            // Assert
-            Assert.NotNull(result);
         }
 
         [Fact]
         public async Task GetAllByMember_Returns_Success()
         {
             // Act
-            var result = await _diaryService.GetAllByMemberOrderByDateAsync();
+            var result = await _diaryDetailService.GetAllByMemberAsync();
 
             // Assert
             Assert.NotNull(result);
@@ -208,53 +190,49 @@ namespace Allinone.Tests.Services
         public async Task GetByMemberAsync_id_Returns_Success()
         {
             // Act
-            var result = await _diaryService.GetByMemberAsync(_diaryId);
+            var result = await _diaryDetailService.GetByMemberAsync(_diaryDetailId);
 
             // Assert
             Assert.NotNull(result);
+            Assert.Equal(_diaryDetailTitle, result!.Title);
+            Assert.Equal(_diaryDetailDesc, result!.Description);
         }
 
         [Fact]
         public async Task Add_Returns_Success()
         {
             // Assign
-            var req = new DiaryAddReq
+            var req = new DiaryDetailAddReq
             {
-                Date = DateTime.Now,
-                Activitys = [_diaryActivityId, _diaryActivityId2, 3],
-                Emotions = [_diaryEmotionId],
-                Foods = [_diaryFoodId],
-                Locations = [_diaryLocationId],
-                Books = [_diaryBookId],
-                Weathers = [_diaryWeatherId]
+                DiaryID = _diaryId,
+                DiaryTypeID = _diaryTypeId,
+                Title = "new title",
+                Description = "new description"
             };
 
             // Act
-            var result = await _diaryService.AddAsync(req);
+            var result = await _diaryDetailService.AddAsync(req);
 
             // Assert
             Assert.NotNull(result);
+            Assert.Equal(req.Title, result!.Title);
+            Assert.Equal(req.Description, result!.Description);
         }
 
         [Fact]
         public async Task Update_Returns_Success()
         {
             // Assign
-            var req = new DiaryAddReq
+            var req = new DiaryDetailAddReq
             {
-                Date = DateTime.Now.AddDays(2),
-                Title = "Updated Diary Title",
-                Description = "Updated Diary Description",
-                Activitys = [_diaryActivityId, _diaryActivityId2, 3],
-                Emotions = [_diaryEmotionId],
-                Foods = [_diaryFoodId],
-                Locations = [_diaryLocationId],
-                Books = [_diaryBookId],
-                Weathers = [_diaryWeatherId]
+                DiaryID = _diaryId,
+                DiaryTypeID = _diaryTypeId,
+                Title = "update title",
+                Description = "update description"
             };
 
             // Act
-            var result = await _diaryService.UpdateAsync(_diaryId, req);
+            var result = await _diaryDetailService.UpdateAsync(_diaryDetailId, req);
 
             // Assert
             Assert.NotNull(result);
@@ -266,15 +244,15 @@ namespace Allinone.Tests.Services
         public async Task Delete_Returns_Success()
         {
             // Act
-            var result = await _diaryService.DeleteAsync(_diaryId);
+            var result = await _diaryDetailService.DeleteAsync(_diaryDetailId);
 
             // Assert
             Assert.NotNull(result);
 
             // Act & Assert
-            await Assert.ThrowsAsync<DiaryNotFoundException>(async () =>
+            await Assert.ThrowsAsync<DiaryDetailNotFoundException>(async () =>
             {
-                await _diaryService.GetByMemberAsync(_diaryId);
+                await _diaryDetailService.GetByMemberAsync(_diaryDetailId);
             });
         }
     }

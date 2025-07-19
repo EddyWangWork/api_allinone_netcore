@@ -11,6 +11,14 @@ namespace Allinone.API.Controllers
     public class DiaryWeatherController(IDiaryWeatherService _diaryWeatherService) : ControllerBase
     {
         [HttpGet]
+        [Route("GetDiaryWeathers")]
+        public async Task<IActionResult> GetDiaryWeathers()
+        {
+            var response = await _diaryWeatherService.GetAllByMemberAsync();
+            return Ok(response);
+        }
+
+        [HttpGet]
         public async Task<IActionResult> Get()
         {
             var response = await _diaryWeatherService.GetAllByMemberAsync();

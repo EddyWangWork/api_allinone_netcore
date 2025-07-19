@@ -1,5 +1,11 @@
 ﻿namespace Allinone.Domain
 {
+    public interface IID
+    {
+        public int ID { get; set; }
+        DateTime UpdateDate { get; set; }
+    }
+
     public interface IMember
     {
         public int ID { get; set; }

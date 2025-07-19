@@ -4,6 +4,7 @@ using Allinone.DLL.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Allinone.DLL.Migrations
 {
     [DbContext(typeof(DSContext))]
-    partial class DSContextModelSnapshot : ModelSnapshot
+    [Migration("20250621132754_AddTableDiaryType")]
+    partial class AddTableDiaryType
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -248,39 +251,6 @@ namespace Allinone.DLL.Migrations
                     b.HasIndex("MemberID");
 
                     b.ToTable("DiaryBook");
-                });
-
-            modelBuilder.Entity("Allinone.Domain.Diarys.DiaryDetails.DiaryDetail", b =>
-                {
-                    b.Property<int>("ID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ID"));
-
-                    b.Property<string>("Description")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("DiaryID")
-                        .HasColumnType("int");
-
-                    b.Property<int>("DiaryTypeID")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("UpdateDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("ID");
-
-                    b.HasIndex("DiaryID");
-
-                    b.HasIndex("DiaryTypeID");
-
-                    b.ToTable("DiaryDetail");
                 });
 
             modelBuilder.Entity("Allinone.Domain.Diarys.DiaryEmotions.DiaryEmotion", b =>
@@ -774,25 +744,6 @@ namespace Allinone.DLL.Migrations
                     b.Navigation("Member");
                 });
 
-            modelBuilder.Entity("Allinone.Domain.Diarys.DiaryDetails.DiaryDetail", b =>
-                {
-                    b.HasOne("Allinone.Domain.Diarys.Diary", "Diary")
-                        .WithMany("DiaryDetails")
-                        .HasForeignKey("DiaryID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Allinone.Domain.Diarys.DiaryTypes.DiaryType", "DiaryType")
-                        .WithMany()
-                        .HasForeignKey("DiaryTypeID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Diary");
-
-                    b.Navigation("DiaryType");
-                });
-
             modelBuilder.Entity("Allinone.Domain.Diarys.DiaryEmotions.DiaryEmotion", b =>
                 {
                     b.HasOne("Allinone.Domain.Members.Member", "Member")
@@ -936,11 +887,6 @@ namespace Allinone.DLL.Migrations
             modelBuilder.Entity("Allinone.Domain.DS.DSItems.DSItem", b =>
                 {
                     b.Navigation("DSItemSubs");
-                });
-
-            modelBuilder.Entity("Allinone.Domain.Diarys.Diary", b =>
-                {
-                    b.Navigation("DiaryDetails");
                 });
 
             modelBuilder.Entity("Allinone.Domain.Shops.Shop", b =>

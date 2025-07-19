@@ -11,6 +11,14 @@ namespace Allinone.API.Controllers
     public class DiaryLocationController(IDiaryLocationService _diaryLocationService) : ControllerBase
     {
         [HttpGet]
+        [Route("GetDiaryLocations")]
+        public async Task<IActionResult> GetDiaryLocations()
+        {
+            var response = await _diaryLocationService.GetAllByMemberAsync();
+            return Ok(response);
+        }
+
+        [HttpGet]
         public async Task<IActionResult> Get()
         {
             var response = await _diaryLocationService.GetAllByMemberAsync();

@@ -30,6 +30,12 @@ namespace Allinone.BLL
             return entity;
         }
 
+        public static T SetUpdateDateFields<T>(T entity) where T : IID
+        {
+            entity.UpdateDate = DateTime.UtcNow.AddHours(8);
+            return entity;
+        }
+
         public static List<T> EnsureNotNullOrEmpty<T>(IEnumerable<T>? source, Exception exceptionToThrow)
         {
             if (source?.Any() != true)

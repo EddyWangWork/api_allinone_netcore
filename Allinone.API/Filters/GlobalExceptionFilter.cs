@@ -21,7 +21,9 @@ namespace Allinone.API.Filters
             var response = new ApiResponse(null) { Success = false };
             var statusCode = StatusCodes.Status500InternalServerError;
 
-            var errorMessage = $"{context.Exception.Message}, {context.Exception.InnerException}";
+            var errorMessage = string.Join(", ",
+                new[] { context.Exception.Message, context.Exception.InnerException?.ToString() }
+                .Where(msg => !string.IsNullOrWhiteSpace(msg)));
 
             switch (context.Exception)
             {
@@ -47,6 +49,8 @@ namespace Allinone.API.Filters
                 case DiaryBookNotFoundException:
                 case DiaryWeatherNotFoundException:
                 case DiaryNotFoundException:
+                case DiaryTypeNotFoundException:
+                case DiaryDetailNotFoundException:
                     {
                         //response.Message = context.Exception.Message;
                         response.Message = errorMessage;
@@ -61,6 +65,8 @@ namespace Allinone.API.Filters
                 case ShopBadRequestException:
                 case TripBadRequestException:
                 case TripDetailTypeBadRequestException:
+                case DiaryBadRequestException:
+                case DiaryDateDuplicatedException:
                     {
                         response.Message = errorMessage;
                         statusCode = StatusCodes.Status400BadRequest;

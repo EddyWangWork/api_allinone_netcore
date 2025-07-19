@@ -11,6 +11,14 @@ namespace Allinone.API.Controllers
     public class DiaryEmotionController(IDiaryEmotionService _diaryEmotionService) : ControllerBase
     {
         [HttpGet]
+        [Route("GetDiaryEmotions")]
+        public async Task<IActionResult> GetDiaryEmotions()
+        {
+            var response = await _diaryEmotionService.GetAllByMemberAsync();
+            return Ok(response);
+        }
+
+        [HttpGet]
         public async Task<IActionResult> Get()
         {
             var response = await _diaryEmotionService.GetAllByMemberAsync();

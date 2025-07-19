@@ -1,9 +1,11 @@
 ﻿using Allinone.Domain.Diarys;
 using Allinone.Domain.Diarys.DiaryActivitys;
 using Allinone.Domain.Diarys.DiaryBooks;
+using Allinone.Domain.Diarys.DiaryDetails;
 using Allinone.Domain.Diarys.DiaryEmotions;
 using Allinone.Domain.Diarys.DiaryFoods;
 using Allinone.Domain.Diarys.DiaryLocations;
+using Allinone.Domain.Diarys.DiaryTypes;
 using Allinone.Domain.Diarys.DiaryWeathers;
 using Allinone.Domain.DS.Accounts;
 using Allinone.Domain.DS.DSItems;
@@ -45,11 +47,23 @@ namespace Allinone.DLL.Data
         public DbSet<DiaryBook> DiaryBook { get; set; }
         public DbSet<DiaryWeather> DiaryWeather { get; set; }
         public DbSet<Diary> Diary { get; set; }
+        public DbSet<DiaryType> DiaryType { get; set; }
+        public DbSet<DiaryDetail> DiaryDetail { get; set; }
 
-        //protected override void OnModelCreating(ModelBuilder modelBuilder)
-        //{
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            // Prevent multiple cascade path error
+            modelBuilder.Entity<DiaryDetail>()
+                .HasOne(d => d.Diary)
+                .WithMany(d => d.DiaryDetails)
+                .HasForeignKey(d => d.DiaryID)
+                .OnDelete(DeleteBehavior.Cascade); // or .NoAction()
 
-        //    modelBuilder.Entity<Member>().ToTable("Member");
-        //}
+            modelBuilder.Entity<DiaryDetail>()
+                .HasOne(d => d.DiaryType)
+                .WithMany()
+                .HasForeignKey(d => d.DiaryTypeID)
+                .OnDelete(DeleteBehavior.Restrict); // or .NoAction()
+        }
     }
 }

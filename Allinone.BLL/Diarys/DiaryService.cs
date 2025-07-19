@@ -1,6 +1,8 @@
 ﻿using Allinone.DLL.Repositories;
 using Allinone.Domain;
 using Allinone.Domain.Diarys;
+using Allinone.Domain.Diarys.DiaryDetails;
+using Allinone.Domain.Enums;
 using Allinone.Domain.Exceptions;
 using Allinone.Helper.Cache;
 using Allinone.Helper.Extension;
@@ -10,6 +12,7 @@ namespace Allinone.BLL.Diarys
 {
     public interface IDiaryService
     {
+        Task<DiaryInfoDto> GetAllDiaryInfoAsync();
         Task<IEnumerable<DiaryDto>> GetAllByMemberOrderByDateAsync();
         Task<DiaryDto> GetByMemberAsync(int id);
         Task<Diary> AddAsync(DiaryAddReq req);
@@ -28,6 +31,28 @@ namespace Allinone.BLL.Diarys
         MemoryCacheHelper _memoryCacheHelper,
         IMapModel _mapper) : BaseBLL, IDiaryService
     {
+        public async Task<DiaryInfoDto> GetAllDiaryInfoAsync()
+        {
+            var diaryActivityEntities = await _diaryActivityRepository.GetAllByMemberAsync(MemberId);
+            var diaryEmotionEntities = await _diaryEmotionRepository.GetAllByMemberAsync(MemberId);
+            var diaryFoodEntities = await _diaryFoodRepository.GetAllByMemberAsync(MemberId);
+            var diaryLocationEntities = await _diaryLocationRepository.GetAllByMemberAsync(MemberId);
+            var diaryBookEntities = await _diaryBookRepository.GetAllByMemberAsync(MemberId);
+            var diaryWeatherEntities = await _diaryWeatherRepository.GetAllByMemberAsync(MemberId);
+
+            var diaryInfo = new DiaryInfoDto
+            {
+                Activitys = diaryActivityEntities.Select(x => new EnumModel { ID = x.ID, Name = x.Name }).ToList(),
+                Emotions = diaryEmotionEntities.Select(x => new EnumModel { ID = x.ID, Name = x.Name }).ToList(),
+                Foods = diaryFoodEntities.Select(x => new EnumModel { ID = x.ID, Name = x.Name }).ToList(),
+                Locations = diaryLocationEntities.Select(x => new EnumModel { ID = x.ID, Name = x.Name }).ToList(),
+                Books = diaryBookEntities.Select(x => new EnumModel { ID = x.ID, Name = x.Name }).ToList(),
+                Weathers = diaryWeatherEntities.Select(x => new EnumModel { ID = x.ID, Name = x.Name }).ToList()
+            };
+
+            return diaryInfo;
+        }
+
         public async Task<IEnumerable<DiaryDto>> GetAllByMemberOrderByDateAsync()
         {
             var diaryEntities = await _diaryRepository.GetAllByMemberOrderByDateAsync(MemberId);
@@ -42,12 +67,25 @@ namespace Allinone.BLL.Diarys
             {
                 var dto = _mapper.MapDto<Diary, DiaryDto>(item);
 
-                dto.Activitys = GetItemContainIds(item.ActivityIDs, diaryActivityEntities.ToDictionary(x => x.ID, x => x.Name));
-                dto.Emotions = GetItemContainIds(item.EmotionIDs, diaryEmotionEntities.ToDictionary(x => x.ID, x => x.Name));
-                dto.Foods = GetItemContainIds(item.FoodIDs, diaryFoodEntities.ToDictionary(x => x.ID, x => x.Name));
-                dto.Locations = GetItemContainIds(item.LocationIDs, diaryLocationEntities.ToDictionary(x => x.ID, x => x.Name));
-                dto.Books = GetItemContainIds(item.BookIDs, diaryBookEntities.ToDictionary(x => x.ID, x => x.Name));
-                dto.Weathers = GetItemContainIds(item.WeatherIDs, diaryWeatherEntities.ToDictionary(x => x.ID, x => x.Name));
+                List<DiaryDetailDto> dDetailDto = [];
+                foreach (var diaryDetail in item.DiaryDetails)
+                {
+                    dDetailDto.Add(new DiaryDetailDto
+                    {
+                        ID = diaryDetail.ID,
+                        Title = diaryDetail.Title,
+                        Description = diaryDetail.Description,
+                        DiaryType = diaryDetail.DiaryType.Name
+                    });
+                }
+                dto.DiaryDetailDtos.AddRange(dDetailDto);
+
+                dto.Activitys = GetItemContainIdsEnumModel(item.ActivityIDs, diaryActivityEntities.ToDictionary(x => x.ID, x => x.Name));
+                dto.Emotions = GetItemContainIdsEnumModel(item.EmotionIDs, diaryEmotionEntities.ToDictionary(x => x.ID, x => x.Name));
+                dto.Foods = GetItemContainIdsEnumModel(item.FoodIDs, diaryFoodEntities.ToDictionary(x => x.ID, x => x.Name));
+                dto.Locations = GetItemContainIdsEnumModel(item.LocationIDs, diaryLocationEntities.ToDictionary(x => x.ID, x => x.Name));
+                dto.Books = GetItemContainIdsEnumModel(item.BookIDs, diaryBookEntities.ToDictionary(x => x.ID, x => x.Name));
+                dto.Weathers = GetItemContainIdsEnumModel(item.WeatherIDs, diaryWeatherEntities.ToDictionary(x => x.ID, x => x.Name));
 
                 return dto;
             });
@@ -55,7 +93,7 @@ namespace Allinone.BLL.Diarys
 
         public async Task<DiaryDto> GetByMemberAsync(int id)
         {
-            var diaryEntity = await _diaryRepository.GetAllByMemberAsync(MemberId, id) ??
+            var diaryEntity = await _diaryRepository.GetByMemberWithDetailAsync(MemberId, id) ??
                 throw new DiaryNotFoundException();
 
             var diaryActivityEntities = await _diaryActivityRepository.GetAllByMemberAsync(MemberId);
@@ -67,12 +105,24 @@ namespace Allinone.BLL.Diarys
 
             var dto = _mapper.MapDto<Diary, DiaryDto>(diaryEntity);
 
-            dto.Activitys = GetItemContainIds(diaryEntity.ActivityIDs, diaryActivityEntities.ToDictionary(x => x.ID, x => x.Name));
-            dto.Emotions = GetItemContainIds(diaryEntity.EmotionIDs, diaryEmotionEntities.ToDictionary(x => x.ID, x => x.Name));
-            dto.Foods = GetItemContainIds(diaryEntity.FoodIDs, diaryFoodEntities.ToDictionary(x => x.ID, x => x.Name));
-            dto.Locations = GetItemContainIds(diaryEntity.LocationIDs, diaryLocationEntities.ToDictionary(x => x.ID, x => x.Name));
-            dto.Books = GetItemContainIds(diaryEntity.BookIDs, diaryBookEntities.ToDictionary(x => x.ID, x => x.Name));
-            dto.Weathers = GetItemContainIds(diaryEntity.WeatherIDs, diaryWeatherEntities.ToDictionary(x => x.ID, x => x.Name));
+            List<DiaryDetailDto> dDetailDto = [];
+            foreach (var diaryDetail in diaryEntity.DiaryDetails)
+            {
+                dDetailDto.Add(new DiaryDetailDto
+                {
+                    Title = diaryDetail.Title,
+                    Description = diaryDetail.Description,
+                    DiaryType = diaryDetail.DiaryType.Name
+                });
+            }
+            dto.DiaryDetailDtos.AddRange(dDetailDto);
+
+            dto.Activitys = GetItemContainIdsEnumModel(diaryEntity.ActivityIDs, diaryActivityEntities.ToDictionary(x => x.ID, x => x.Name));
+            dto.Emotions = GetItemContainIdsEnumModel(diaryEntity.EmotionIDs, diaryEmotionEntities.ToDictionary(x => x.ID, x => x.Name));
+            dto.Foods = GetItemContainIdsEnumModel(diaryEntity.FoodIDs, diaryFoodEntities.ToDictionary(x => x.ID, x => x.Name));
+            dto.Locations = GetItemContainIdsEnumModel(diaryEntity.LocationIDs, diaryLocationEntities.ToDictionary(x => x.ID, x => x.Name));
+            dto.Books = GetItemContainIdsEnumModel(diaryEntity.BookIDs, diaryBookEntities.ToDictionary(x => x.ID, x => x.Name));
+            dto.Weathers = GetItemContainIdsEnumModel(diaryEntity.WeatherIDs, diaryWeatherEntities.ToDictionary(x => x.ID, x => x.Name));
 
             return dto;
         }
@@ -80,6 +130,7 @@ namespace Allinone.BLL.Diarys
         public async Task<Diary> AddAsync(DiaryAddReq req)
         {
             if (MemberId == 0) throw new MemberNotFoundException();
+            if (await _diaryRepository.IsDiaryDateExist(MemberId, req.Date.Value)) throw new DiaryDateDuplicatedException();
 
             var entity = _mapper.MapDto<DiaryAddReq, Diary>(req);
             entity = ServiceHelper.SetAddMemberFields(entity, MemberId);
@@ -105,10 +156,10 @@ namespace Allinone.BLL.Diarys
 
             entity.ActivityIDs = await GetItemNameString(_diaryActivityRepository, req.Activitys);
             entity.EmotionIDs = await GetItemNameString(_diaryEmotionRepository, req.Emotions);
-            entity.FoodIDs = await GetItemNameString(_diaryEmotionRepository, req.Foods);
-            entity.LocationIDs = await GetItemNameString(_diaryEmotionRepository, req.Locations);
-            entity.BookIDs = await GetItemNameString(_diaryEmotionRepository, req.Books);
-            entity.WeatherIDs = await GetItemNameString(_diaryEmotionRepository, req.Weathers);
+            entity.FoodIDs = await GetItemNameString(_diaryFoodRepository, req.Foods);
+            entity.LocationIDs = await GetItemNameString(_diaryLocationRepository, req.Locations);
+            entity.BookIDs = await GetItemNameString(_diaryBookRepository, req.Books);
+            entity.WeatherIDs = await GetItemNameString(_diaryWeatherRepository, req.Weathers);
 
             await _diaryRepository.UpdateAsync(entity);
 
@@ -149,6 +200,25 @@ namespace Allinone.BLL.Diarys
                 .Select(int.Parse)
                 .Where(dicItems.ContainsKey)
                 .Select(id => dicItems[id])
+                .ToList();
+        }
+
+        private static List<EnumModel> GetItemContainIdsEnumModel(
+            string diaryEntityItemString,
+            Dictionary<int, string> dicItems)
+        {
+            if (diaryEntityItemString.IsNullOrEmpty())
+                return [];
+
+            return diaryEntityItemString
+                .Split(',')
+                .Select(int.Parse)
+                .Where(dicItems.ContainsKey)
+                .Select(id => new EnumModel
+                {
+                    ID = id,
+                    Name = dicItems[id]
+                })
                 .ToList();
         }
     }

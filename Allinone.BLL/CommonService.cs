@@ -1,10 +1,4 @@
-﻿using Allinone.Domain.Enums;
-using Allinone.Helper.Cache;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Allinone.Helper.Cache;
 
 namespace Allinone.BLL
 {

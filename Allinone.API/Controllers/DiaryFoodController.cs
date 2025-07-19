@@ -11,6 +11,14 @@ namespace Allinone.API.Controllers
     public class DiaryFoodController(IDiaryFoodService _diaryFoodService) : ControllerBase
     {
         [HttpGet]
+        [Route("GetDiaryFoods")]
+        public async Task<IActionResult> GetDiaryFoods()
+        {
+            var response = await _diaryFoodService.GetAllByMemberAsync();
+            return Ok(response);
+        }
+
+        [HttpGet]
         public async Task<IActionResult> Get()
         {
             var response = await _diaryFoodService.GetAllByMemberAsync();

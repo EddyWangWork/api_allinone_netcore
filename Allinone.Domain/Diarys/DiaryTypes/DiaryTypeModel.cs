@@ -1,6 +1,6 @@
-﻿namespace Allinone.Domain.Diarys.DiaryFoods
+﻿namespace Allinone.Domain.Diarys.DiaryTypes
 {
-    public class DiaryFoodAddReq
+    public class DiaryTypeAddReq
     {
         public string Name { get; set; }
         public string? Description { get; set; } = string.Empty;

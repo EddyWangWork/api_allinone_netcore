@@ -12,6 +12,7 @@ namespace Allinone.DLL.Repositories
         Task<IEnumerable<int>> GetIDsByMemberAsync(int memberid, List<int> ids);
         Task<IEnumerable<T>> GetAllAsync();
         Task<T> GetByIdAsync(int id);
+        Task<bool> IsExistByMemberAsync(int memberid, int id);
         Task AddAsync(T entity);
         Task UpdateAsync(T entity);
         Task DeleteAsync(int id);
@@ -40,6 +41,8 @@ namespace Allinone.DLL.Repositories
 
         public async Task<T> GetByIdAsync(int id) => await _dbSet.FindAsync(id);
 
+        public async Task<bool> IsExistByMemberAsync(int memberid, int id) =>
+            await _dbSet.AnyAsync(x => x.MemberID == memberid && x.ID == id);
 
         public async Task AddAsync(T entity)
         {

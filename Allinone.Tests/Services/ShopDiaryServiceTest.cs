@@ -3,20 +3,15 @@ using Allinone.BLL.Shops;
 using Allinone.DLL.Data;
 using Allinone.DLL.Repositories;
 using Allinone.DLL.UnitOfWork;
-using Allinone.Domain.Shops.ShopTypes;
+using Allinone.Domain.Exceptions;
 using Allinone.Domain.Shops;
+using Allinone.Domain.Shops.ShopDiarys;
+using Allinone.Domain.Shops.ShopTypes;
 using Allinone.Helper.Cache;
 using Allinone.Helper.Mapper;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using Allinone.Domain.Shops.ShopDiarys;
-using Allinone.Domain.Exceptions;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Allinone.Tests.Services
 {
