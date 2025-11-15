@@ -1,4 +1,5 @@
-﻿using Allinone.Domain.Diarys;
+﻿using Allinone.Domain.Auditlogs;
+using Allinone.Domain.Diarys;
 using Allinone.Domain.Diarys.DiaryActivitys;
 using Allinone.Domain.Diarys.DiaryBooks;
 using Allinone.Domain.Diarys.DiaryDetails;
@@ -10,6 +11,7 @@ using Allinone.Domain.Diarys.DiaryWeathers;
 using Allinone.Domain.DS.Accounts;
 using Allinone.Domain.DS.DSItems;
 using Allinone.Domain.DS.Transactions;
+using Allinone.Domain.Enums;
 using Allinone.Domain.Kanbans;
 using Allinone.Domain.Members;
 using Allinone.Domain.Shops;
@@ -17,6 +19,7 @@ using Allinone.Domain.Shops.ShopDiarys;
 using Allinone.Domain.Shops.ShopTypes;
 using Allinone.Domain.Todolists;
 using Allinone.Domain.Trips;
+using Allinone.Helper.Enums;
 using AutoMapper;
 
 namespace Allinone.Helper.Mapper
@@ -91,6 +94,12 @@ namespace Allinone.Helper.Mapper
             CreateMap<DiaryTypeAddReq, DiaryType>();
             CreateMap<DiaryDetailAddReq, DiaryDetail>();
             CreateMap<DiaryDetail, DiaryDetailDto>();
+
+            CreateMap<Auditlog, AuditlogDto>()
+                .ForMember(dest => dest.TypeName, opt =>
+                    opt.MapFrom(src => EnumHelper.GetEnumStringValue<EnumAuditlogType>(src.TypeID)))
+                .ForMember(dest => dest.ActionTypeName, opt =>
+                    opt.MapFrom(src => EnumHelper.GetEnumStringValue<EnumAuditlogActionType>(src.ActionTypeID)));
         }
     }
 }

@@ -50,6 +50,8 @@ namespace Allinone.DLL.Repositories
                     a.ID == req.TodolistID
                  select new
                  {
+                     Todolist = a,
+                     TodolistName = a.Name,
                      TodolistID = a.ID,
                      TodolistDoneID = b2.ID != null ? b2.ID : 0,
                      a.CategoryID,
@@ -77,6 +79,8 @@ namespace Allinone.DLL.Repositories
             await context.TodolistDone.AddAsync(req);
             await context.SaveChangesAsync();
 
+            req.Todolist = todolist.Todolist;
+
             return req;
         }
 
@@ -86,8 +90,13 @@ namespace Allinone.DLL.Repositories
         public async Task<IEnumerable<TodolistDone>> GetAllAsync() =>
             await context.TodolistDone.ToListAsync();
 
+        //public async Task<TodolistDone>? GetByIdAsync(int id) =>
+        //    await context.TodolistDone.FindAsync(id);
+
         public async Task<TodolistDone>? GetByIdAsync(int id) =>
-            await context.TodolistDone.FindAsync(id);
+            await context.TodolistDone
+            .Include(x => x.Todolist)
+            .FirstOrDefaultAsync(x => x.ID == id);
 
         public void Update(TodolistDone todolistDone)
         {

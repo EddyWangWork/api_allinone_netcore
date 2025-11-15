@@ -1,7 +1,9 @@
-﻿using Allinone.DLL.Repositories;
+﻿using Allinone.BLL.Auditlogs;
+using Allinone.DLL.Repositories;
 using Allinone.Domain.Exceptions;
 using Allinone.Domain.Shops;
 using Allinone.Helper.Mapper;
+using Newtonsoft.Json;
 
 namespace Allinone.BLL.Shops
 {
@@ -15,6 +17,7 @@ namespace Allinone.BLL.Shops
     }
 
     public class ShopService(
+        IAuditlogService _auditlogService,
         IShopTypeRepository shopTypeRepository,
         IShopRepository shopRepository,
         IMapModel mapper) : BaseBLL, IShopService
@@ -53,6 +56,8 @@ namespace Allinone.BLL.Shops
 
             await shopRepository.Add(entity);
 
+            await _auditlogService.LogShopNew(req.Name, MemberId, JsonConvert.SerializeObject(entity));
+
             return entity;
         }
 
@@ -67,7 +72,8 @@ namespace Allinone.BLL.Shops
             await SetShopTypesField(entity, req.TypeList);
 
             shopRepository.Update(entity);
-
+            await _auditlogService.LogShopUpdate(
+                entity.Name, MemberId, JsonConvert.SerializeObject(entity), JsonConvert.SerializeObject(req));
             return entity;
         }
 
@@ -78,7 +84,7 @@ namespace Allinone.BLL.Shops
             var entity = await shopRepository.GetByMemberAsync(MemberId, id) ?? throw new ShopNotFoundException();
 
             shopRepository.Delete(entity);
-
+            await _auditlogService.LogShopDelete(entity.Name, MemberId, JsonConvert.SerializeObject(entity));
             return entity;
         }
 

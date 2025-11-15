@@ -11,6 +11,9 @@
     //TodolistDone
     public class TodolistDoneNotFoundException(string message = "TodolistDone not found") : Exception(message) { }
 
+    //Auditlog
+    public class AuditlogNotFoundException(string message = "Auditlog not found") : Exception(message) { }
+
     //Diary
     public class DiaryActivityNotFoundException(string message = "Diary Activity not found") : Exception(message) { }
     public class DiaryEmotionNotFoundException(string message = "Diary Emotion not found") : Exception(message) { }

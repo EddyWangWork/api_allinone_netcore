@@ -1,7 +1,9 @@
-﻿using Allinone.DLL.Repositories;
+﻿using Allinone.BLL.Auditlogs;
+using Allinone.DLL.Repositories;
 using Allinone.Domain.Exceptions;
 using Allinone.Domain.Todolists;
 using Allinone.Helper.Mapper;
+using Newtonsoft.Json;
 
 namespace Allinone.BLL.Todolists
 {
@@ -16,6 +18,7 @@ namespace Allinone.BLL.Todolists
     }
 
     public class TodolistDoneService(
+        IAuditlogService _auditlogService,
         ITodolistDoneRepository todolistDoneRepository,
         IMapModel mapper) : BaseBLL, ITodolistDoneService
     {
@@ -37,7 +40,10 @@ namespace Allinone.BLL.Todolists
 
             var entity = mapper.MapDto<TodolistDoneAddReq, TodolistDone>(req);
 
-            return await todolistDoneRepository.Add(entity);
+            var result = await todolistDoneRepository.Add(entity);
+            await _auditlogService.LogTodolistDoneNew(
+                entity.Todolist.Name, MemberId, JsonConvert.SerializeObject(entity));
+            return result;
         }
 
         public async Task<TodolistDone> Update(int id, TodolistDoneUpdateReq req)
@@ -50,6 +56,8 @@ namespace Allinone.BLL.Todolists
 
             todolistDoneRepository.Update(entity);
 
+            await _auditlogService.LogTodolistDoneUpdate(
+                entity.Todolist.Name, MemberId, JsonConvert.SerializeObject(entity), JsonConvert.SerializeObject(req));
             return entity;
         }
 
@@ -60,7 +68,8 @@ namespace Allinone.BLL.Todolists
             var entity = await todolistDoneRepository.GetByIdAsync(id) ?? throw new TodolistDoneNotFoundException();
 
             todolistDoneRepository.Delete(entity);
-
+            await _auditlogService.LogTodolistDoneDelete(
+                entity.Todolist.Name, MemberId, JsonConvert.SerializeObject(entity));
             return entity;
         }
     }

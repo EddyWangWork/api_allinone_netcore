@@ -1,4 +1,5 @@
 ﻿using Allinone.BLL;
+using Allinone.BLL.Auditlogs;
 using Allinone.BLL.Shops;
 using Allinone.DLL.Data;
 using Allinone.DLL.Repositories;
@@ -153,7 +154,10 @@ namespace Allinone.Tests.Services
             var shopTypeRepository = new ShopTypeRepository(context);
             var shopDiaryRepository = new ShopDiaryRepository(context);
 
-            _shopDiaryService = new ShopDiaryService(shopRepository, shopTypeRepository, shopDiaryRepository, mapModel);
+            var auditlogRepository = new AuditlogRepository(context);
+            var auditlogService = new AuditlogService(auditlogRepository, mapModel);
+
+            _shopDiaryService = new ShopDiaryService(auditlogService, shopRepository, shopTypeRepository, shopDiaryRepository, mapModel);
         }
 
         [Fact]

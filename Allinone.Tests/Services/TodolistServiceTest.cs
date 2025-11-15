@@ -1,4 +1,5 @@
 ﻿using Allinone.BLL;
+using Allinone.BLL.Auditlogs;
 using Allinone.BLL.Members;
 using Allinone.BLL.Todolists;
 using Allinone.DLL.Data;
@@ -60,9 +61,11 @@ namespace Allinone.Tests.Services
 
             var todolistRepository = new TodolistRepository(context);
             var memberRepository = new MemberRepository(context);
+            var auditlogRepository = new AuditlogRepository(context);
+            var auditlogService = new AuditlogService(auditlogRepository, mapModel);
 
-            _memberService = new MemberService(memberRepository, mapModel);
-            _todolistService = new TodolistService(todolistRepository, memoryCacheHelper, mapModel);
+            _memberService = new MemberService(auditlogService, memberRepository, mapModel);
+            _todolistService = new TodolistService(auditlogService, todolistRepository, memoryCacheHelper, mapModel);
         }
 
         [Fact]

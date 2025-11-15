@@ -137,10 +137,10 @@ namespace Allinone.BLL.Diarys
 
             entity.ActivityIDs = await GetItemNameString(_diaryActivityRepository, req.Activitys);
             entity.EmotionIDs = await GetItemNameString(_diaryEmotionRepository, req.Emotions);
-            entity.FoodIDs = await GetItemNameString(_diaryEmotionRepository, req.Foods);
-            entity.LocationIDs = await GetItemNameString(_diaryEmotionRepository, req.Locations);
-            entity.BookIDs = await GetItemNameString(_diaryEmotionRepository, req.Books);
-            entity.WeatherIDs = await GetItemNameString(_diaryEmotionRepository, req.Weathers);
+            entity.FoodIDs = await GetItemNameString(_diaryFoodRepository, req.Foods);
+            entity.LocationIDs = await GetItemNameString(_diaryLocationRepository, req.Locations);
+            entity.BookIDs = await GetItemNameString(_diaryBookRepository, req.Books);
+            entity.WeatherIDs = await GetItemNameString(_diaryWeatherRepository, req.Weathers);
 
             await _diaryRepository.AddAsync(entity);
 

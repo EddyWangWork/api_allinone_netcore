@@ -2,6 +2,7 @@ using Allinone.API.Events;
 using Allinone.API.Filters;
 using Allinone.API.Middleware;
 using Allinone.BLL;
+using Allinone.BLL.Auditlogs;
 using Allinone.BLL.Diarys;
 using Allinone.BLL.DS.Accounts;
 using Allinone.BLL.DS.DSItems;
@@ -21,6 +22,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Newtonsoft.Json;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -58,6 +60,7 @@ builder.Services.AddScoped<IDiaryWeatherService, DiaryWeatherService>();
 builder.Services.AddScoped<IDiaryService, DiaryService>();
 builder.Services.AddScoped<IDiaryTypeService, DiaryTypeService>();
 builder.Services.AddScoped<IDiaryDetailService, DiaryDetailService>();
+builder.Services.AddScoped<IAuditlogService, AuditlogService>();
 
 builder.Services.AddScoped<IMemberRepository, MemberRepository>();
 builder.Services.AddScoped<ITodolistRepository, TodolistRepository>();
@@ -82,6 +85,7 @@ builder.Services.AddScoped<IDiaryWeatherRepository, DiaryWeatherRepository>();
 builder.Services.AddScoped<IDiaryRepository, DiaryRepository>();
 builder.Services.AddScoped<IDiaryTypeRepository, DiaryTypeRepository>();
 builder.Services.AddScoped<IDiaryDetailRepository, DiaryDetailRepository>();
+builder.Services.AddScoped<IAuditlogRepository, AuditlogRepository>();
 #endregion
 
 builder.Services.AddMemoryCache();

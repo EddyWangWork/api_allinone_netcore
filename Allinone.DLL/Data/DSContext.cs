@@ -1,4 +1,5 @@
-﻿using Allinone.Domain.Diarys;
+﻿using Allinone.Domain.Auditlogs;
+using Allinone.Domain.Diarys;
 using Allinone.Domain.Diarys.DiaryActivitys;
 using Allinone.Domain.Diarys.DiaryBooks;
 using Allinone.Domain.Diarys.DiaryDetails;
@@ -23,7 +24,6 @@ namespace Allinone.DLL.Data
 {
     public class DSContext(DbContextOptions<DSContext> options) : DbContext(options)
     {
-
         public DbSet<DSItem> DSItem { get; set; }
         public DbSet<DSItemSub> DSItemSub { get; set; }
         public DbSet<DSAccount> DSAccount { get; set; }
@@ -32,7 +32,6 @@ namespace Allinone.DLL.Data
         public DbSet<Member> Member { get; set; }
         public DbSet<Todolist> Todolist { get; set; }
         public DbSet<TodolistDone> TodolistDone { get; set; }
-
         public DbSet<TripDetailType> TripDetailType { get; set; }
         public DbSet<TripDetail> TripDetail { get; set; }
         public DbSet<Trip> Trip { get; set; }
@@ -49,6 +48,7 @@ namespace Allinone.DLL.Data
         public DbSet<Diary> Diary { get; set; }
         public DbSet<DiaryType> DiaryType { get; set; }
         public DbSet<DiaryDetail> DiaryDetail { get; set; }
+        public DbSet<Auditlog> Auditlog { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

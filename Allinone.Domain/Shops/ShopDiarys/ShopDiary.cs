@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace Allinone.Domain.Shops.ShopDiarys
 {
@@ -11,6 +12,8 @@ namespace Allinone.Domain.Shops.ShopDiarys
         public string? Comment { get; set; }
 
         public int ShopID { get; set; }
+
+        [JsonIgnore] // from System.Text.Json
         public Shop Shop { get; set; }
     }
 }

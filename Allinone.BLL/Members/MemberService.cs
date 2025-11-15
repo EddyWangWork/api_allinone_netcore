@@ -1,4 +1,5 @@
-﻿using Allinone.DLL.Repositories;
+﻿using Allinone.BLL.Auditlogs;
+using Allinone.DLL.Repositories;
 using Allinone.Domain.Exceptions;
 using Allinone.Domain.Members;
 using Allinone.Helper.JWT;
@@ -8,7 +9,8 @@ namespace Allinone.BLL.Members
 {
     public class MemberService(
         //IOptions<JwtSettings> jwtSettings,
-        IMemberRepository memberRepository,
+        IAuditlogService _auditlogService,
+        IMemberRepository _memberRepository,
         IMapModel mapper) : BaseBLL, IMemberService
     {
         //private readonly JwtSettings _jwtSettings = jwtSettings.Value;
@@ -17,28 +19,25 @@ namespace Allinone.BLL.Members
         {
             var memberDto = new MemberDto();
 
-            //var member = memberRepository.Get(name, password) ?? throw new NotFoundException($"Member record not found");
-            //var member = await memberRepository.GetAsync(name, password);
-            var member = await memberRepository.GetAsync(name, password) ??
+            var member = await _memberRepository.GetAsync(name, password) ??
                 throw new NotFoundException($"Member record not found");
-
-            //var token = _jwtAuthenticationHelper.GetToken(name);
-            //UpdateMemberToken(member, token);
 
             var token = JWTHelper.GenerateJwtToken(name, member.ID);
 
             member.Token = token;
             member.LastLoginDate = DateTime.UtcNow.AddHours(8);
-            memberRepository.Update(member);
+            _memberRepository.Update(member);
 
             memberDto = mapper.MapDto<Member, MemberDto>(member);
+
+            await _auditlogService.LogLoginNew(name, member.ID);
 
             return memberDto;
         }
 
         public async Task<MemberDto> Add(string name, string password)
         {
-            if (await memberRepository.IsExist(name)) throw new MemberExistException();
+            if (await _memberRepository.IsExist(name)) throw new MemberExistException();
 
             var newMember = new Member
             {
@@ -46,7 +45,7 @@ namespace Allinone.BLL.Members
                 Password = password
             };
 
-            await memberRepository.Add(newMember);
+            await _memberRepository.Add(newMember);
 
             var memberDto = mapper.MapDto<Member, MemberDto>(newMember);
 

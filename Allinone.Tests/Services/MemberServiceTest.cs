@@ -1,4 +1,5 @@
-﻿using Allinone.BLL.Members;
+﻿using Allinone.BLL.Auditlogs;
+using Allinone.BLL.Members;
 using Allinone.DLL.Data;
 using Allinone.DLL.Repositories;
 using Allinone.Domain.Exceptions;
@@ -41,8 +42,10 @@ namespace Allinone.Tests.Services
             var mapModel = services.BuildServiceProvider().GetRequiredService<IMapModel>();
 
             var memberRepository = new MemberRepository(context);
+            var auditlogRepository = new AuditlogRepository(context);
+            var auditlogService = new AuditlogService(auditlogRepository, mapModel);
 
-            _memberService = new MemberService(memberRepository, mapModel);
+            _memberService = new MemberService(auditlogService, memberRepository, mapModel);
         }
 
         [Fact]

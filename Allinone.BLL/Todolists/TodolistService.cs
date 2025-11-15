@@ -1,20 +1,22 @@
-﻿using Allinone.DLL.Repositories;
-using Allinone.Domain.DS.Accounts;
+﻿using Allinone.BLL.Auditlogs;
+using Allinone.DLL.Repositories;
 using Allinone.Domain.Exceptions;
 using Allinone.Domain.Todolists;
 using Allinone.Helper.Cache;
 using Allinone.Helper.Mapper;
+using Newtonsoft.Json;
 
 namespace Allinone.BLL.Todolists
 {
     public class TodolistService(
-        ITodolistRepository todolistRepository,
-        MemoryCacheHelper memoryCacheHelper,
+        IAuditlogService _auditlogService,
+        ITodolistRepository _todolistRepository,
+        MemoryCacheHelper _memoryCacheHelper,
         IMapModel mapper) : BaseBLL, ITodolistService
     {
         public IEnumerable<TodolistDto> GetTodolistsUndone()
         {
-            var todolists = todolistRepository.GetTodolistsUndone(MemberId);
+            var todolists = _todolistRepository.GetTodolistsUndone(MemberId);
             foreach (var item in todolists)
             {
                 if (MemoryCacheHelper.CacheTodolistType.TryGetValue(item.CategoryID, out var name))
@@ -27,7 +29,7 @@ namespace Allinone.BLL.Todolists
 
         public async Task<Todolist> Get(int id)
         {
-            return await todolistRepository.GetAsync(id) ?? throw new TodolistNotFoundException();
+            return await _todolistRepository.GetAsync(id) ?? throw new TodolistNotFoundException();
         }
 
         public async Task<Todolist> Add(TodolistAddReq req)
@@ -37,7 +39,9 @@ namespace Allinone.BLL.Todolists
             var entity = mapper.MapDto<TodolistAddReq, Todolist>(req);
             entity.MemberID = MemberId;
 
-            await todolistRepository.Add(entity);
+            await _todolistRepository.Add(entity);
+
+            await _auditlogService.LogTodolistNew(req.Name, MemberId, JsonConvert.SerializeObject(entity));
 
             return entity;
         }
@@ -46,11 +50,14 @@ namespace Allinone.BLL.Todolists
         {
             if (MemberId == 0) throw new MemberNotFoundException();
 
-            var entity = await todolistRepository.GetAsync(id) ?? throw new TodolistNotFoundException();
+            var entity = await _todolistRepository.GetAsync(id) ?? throw new TodolistNotFoundException();
 
             mapper.Map(req, entity);
 
-            todolistRepository.Update(entity);
+            _todolistRepository.Update(entity);
+
+            await _auditlogService.LogTodolistUpdate(
+                req.Name, MemberId, JsonConvert.SerializeObject(entity), JsonConvert.SerializeObject(req));
 
             return entity;
         }
@@ -59,9 +66,11 @@ namespace Allinone.BLL.Todolists
         {
             if (MemberId == 0) throw new MemberNotFoundException();
 
-            var entity = await todolistRepository.GetAsync(id) ?? throw new TodolistNotFoundException();
+            var entity = await _todolistRepository.GetAsync(id) ?? throw new TodolistNotFoundException();
 
-            todolistRepository.Delete(entity);
+            _todolistRepository.Delete(entity);
+
+            await _auditlogService.LogTodolistDelete(entity.Name, MemberId, JsonConvert.SerializeObject(entity));
 
             return entity;
         }

@@ -1,9 +1,11 @@
-﻿using Allinone.BLL.Members;
+﻿using Allinone.BLL;
+using Allinone.BLL.Auditlogs;
+using Allinone.BLL.Members;
 using Allinone.BLL.Todolists;
-using Allinone.BLL;
 using Allinone.DLL.Data;
 using Allinone.DLL.Repositories;
 using Allinone.Domain.Enums;
+using Allinone.Domain.Exceptions;
 using Allinone.Domain.Todolists;
 using Allinone.Helper.Mapper;
 using Microsoft.EntityFrameworkCore;
@@ -13,7 +15,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Allinone.Domain.Exceptions;
 
 namespace Allinone.Tests.Services
 {
@@ -58,7 +59,11 @@ namespace Allinone.Tests.Services
             var mapModel = services.BuildServiceProvider().GetRequiredService<IMapModel>();
 
             var todolistDoneRepository = new TodolistDoneRepository(context);
-            _todolistDoneService = new TodolistDoneService(todolistDoneRepository, mapModel);
+
+            var auditlogRepository = new AuditlogRepository(context);
+            var auditlogService = new AuditlogService(auditlogRepository, mapModel);
+
+            _todolistDoneService = new TodolistDoneService(auditlogService, todolistDoneRepository, mapModel);
         }
 
         [Fact]
