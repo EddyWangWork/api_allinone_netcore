@@ -1,4 +1,5 @@
-﻿using Microsoft.IdentityModel.Tokens;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -7,7 +8,7 @@ namespace Allinone.Helper.JWT
 {
     public static class JWTHelper
     {
-        public static string GenerateJwtToken(string username, int memberId)
+        public static string GenerateJwtToken(string username, int memberId, IConfiguration? configuration = null)
         {
             var claims = new[]
             {
@@ -16,14 +17,24 @@ namespace Allinone.Helper.JWT
                 new Claim("MemberId", memberId.ToString())
             };
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("your_super_secret_key_that_is_long_enough_123!"));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+            // Use configuration values if available, otherwise use defaults
+            var key = configuration?["Jwt:Key"] ?? "YourSuperSecretKeyHere123!";
+            var issuer = configuration?["Jwt:Issuer"] ?? "ProductServiceApp";
+            var audience = configuration?["Jwt:Audience"] ?? "ProductServiceUsers";
+            var expireMinutes = 60;
+            if (configuration != null && int.TryParse(configuration["Jwt:ExpireMinutes"], out var configMinutes))
+            {
+                expireMinutes = configMinutes;
+            }
+
+            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
+            var creds = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
             var token = new JwtSecurityToken(
-                issuer: "yourIssuer",
-                audience: "yourAudience",
+                issuer: issuer,
+                audience: audience,
                 claims: claims,
-                expires: DateTime.UtcNow.AddHours(8).AddHours(1),
+                expires: DateTime.UtcNow.AddMinutes(expireMinutes),
                 signingCredentials: creds);
 
             return new JwtSecurityTokenHandler().WriteToken(token);

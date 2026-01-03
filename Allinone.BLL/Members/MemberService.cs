@@ -4,17 +4,16 @@ using Allinone.Domain.Exceptions;
 using Allinone.Domain.Members;
 using Allinone.Helper.JWT;
 using Allinone.Helper.Mapper;
+using Microsoft.Extensions.Configuration;
 
 namespace Allinone.BLL.Members
 {
     public class MemberService(
-        //IOptions<JwtSettings> jwtSettings,
         IAuditlogService _auditlogService,
         IMemberRepository _memberRepository,
-        IMapModel mapper) : BaseBLL, IMemberService
+        IMapModel mapper,
+        IConfiguration configuration) : BaseBLL, IMemberService
     {
-        //private readonly JwtSettings _jwtSettings = jwtSettings.Value;
-
         public async Task<MemberDto> LoginV2(string name, string password)
         {
             var memberDto = new MemberDto();
@@ -22,7 +21,7 @@ namespace Allinone.BLL.Members
             var member = await _memberRepository.GetAsync(name, password) ??
                 throw new NotFoundException($"Member record not found");
 
-            var token = JWTHelper.GenerateJwtToken(name, member.ID);
+            var token = JWTHelper.GenerateJwtToken(name, member.ID, configuration);
 
             member.Token = token;
             member.LastLoginDate = DateTime.UtcNow.AddHours(8);

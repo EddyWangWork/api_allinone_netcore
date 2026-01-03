@@ -1,6 +1,7 @@
 using Allinone.API.Events;
 using Allinone.API.Filters;
 using Allinone.API.Middleware;
+using Allinone.API.Services;
 using Allinone.BLL;
 using Allinone.BLL.Auditlogs;
 using Allinone.BLL.Diarys;
@@ -22,7 +23,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Newtonsoft.Json;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -90,6 +90,7 @@ builder.Services.AddScoped<IAuditlogRepository, AuditlogRepository>();
 
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<MemoryCacheHelper>();
+builder.Services.AddScoped<IIdleTimeTrackingService, IdleTimeTrackingService>();
 
 builder.Services.AddDbContext<DSContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DSConnection"),
@@ -140,13 +141,40 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = "yourIssuer",
-            ValidAudience = "yourAudience",
+            ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? "yourIssuer",
+            ValidAudience = builder.Configuration["Jwt:Audience"] ?? "yourAudience",
             IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes("your_super_secret_key_that_is_long_enough_123!"))
+            Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? "your_super_secret_key_that_is_long_enough_123!"))
         };
 
-        options.Events = new CustomBearerEvents();
+        // Configure events with dependency injection
+        options.Events = new JwtBearerEvents
+        {
+            OnAuthenticationFailed = async context =>
+            {
+                var serviceProvider = context.HttpContext.RequestServices;
+                var idleTimeService = serviceProvider.GetRequiredService<IIdleTimeTrackingService>();
+                var configuration = serviceProvider.GetRequiredService<IConfiguration>();
+                var customEvents = new CustomBearerEvents(idleTimeService, configuration);
+                await customEvents.AuthenticationFailed(context);
+            },
+            OnTokenValidated = async context =>
+            {
+                var serviceProvider = context.HttpContext.RequestServices;
+                var idleTimeService = serviceProvider.GetRequiredService<IIdleTimeTrackingService>();
+                var configuration = serviceProvider.GetRequiredService<IConfiguration>();
+                var customEvents = new CustomBearerEvents(idleTimeService, configuration);
+                await customEvents.TokenValidated(context);
+            },
+            OnMessageReceived = async context =>
+            {
+                var serviceProvider = context.HttpContext.RequestServices;
+                var idleTimeService = serviceProvider.GetRequiredService<IIdleTimeTrackingService>();
+                var configuration = serviceProvider.GetRequiredService<IConfiguration>();
+                var customEvents = new CustomBearerEvents(idleTimeService, configuration);
+                await customEvents.MessageReceived(context);
+            }
+        };
     });
 
 builder.Services.AddAuthorization();

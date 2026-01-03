@@ -1,7 +1,5 @@
 ﻿using Allinone.Domain.Enums;
 using Microsoft.Extensions.Caching.Memory;
-using System.Collections;
-using System.Collections.Generic;
 
 namespace Allinone.Helper.Cache
 {
