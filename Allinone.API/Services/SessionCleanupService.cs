@@ -47,15 +47,17 @@ namespace Allinone.API.Services
         {
             using var scope = _serviceProvider.CreateScope();
             var sessionRepository = scope.ServiceProvider.GetRequiredService<IUserSessionRepository>();
+            var tokenBlacklistRepository = scope.ServiceProvider.GetRequiredService<ITokenBlacklistRepository>();
 
             try
             {
                 await sessionRepository.DeleteExpiredSessionsAsync();
-                _logger.LogInformation("Expired sessions cleaned up successfully.");
+                await tokenBlacklistRepository.DeleteExpiredTokensAsync();
+                _logger.LogInformation("Expired sessions and blacklisted tokens cleaned up successfully.");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to clean up expired sessions.");
+                _logger.LogError(ex, "Failed to clean up expired sessions and tokens.");
                 throw;
             }
         }

@@ -87,6 +87,7 @@ builder.Services.AddScoped<IDiaryTypeRepository, DiaryTypeRepository>();
 builder.Services.AddScoped<IDiaryDetailRepository, DiaryDetailRepository>();
 builder.Services.AddScoped<IAuditlogRepository, AuditlogRepository>();
 builder.Services.AddScoped<IUserSessionRepository, UserSessionRepository>();
+builder.Services.AddScoped<ITokenBlacklistRepository, TokenBlacklistRepository>();
 #endregion
 
 builder.Services.AddMemoryCache();
@@ -158,24 +159,27 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             {
                 var serviceProvider = context.HttpContext.RequestServices;
                 var idleTimeService = serviceProvider.GetRequiredService<IIdleTimeTrackingService>();
+                var tokenBlacklistRepository = serviceProvider.GetRequiredService<ITokenBlacklistRepository>();
                 var configuration = serviceProvider.GetRequiredService<IConfiguration>();
-                var customEvents = new CustomBearerEvents(idleTimeService, configuration);
+                var customEvents = new CustomBearerEvents(idleTimeService, tokenBlacklistRepository, configuration);
                 await customEvents.AuthenticationFailed(context);
             },
             OnTokenValidated = async context =>
             {
                 var serviceProvider = context.HttpContext.RequestServices;
                 var idleTimeService = serviceProvider.GetRequiredService<IIdleTimeTrackingService>();
+                var tokenBlacklistRepository = serviceProvider.GetRequiredService<ITokenBlacklistRepository>();
                 var configuration = serviceProvider.GetRequiredService<IConfiguration>();
-                var customEvents = new CustomBearerEvents(idleTimeService, configuration);
+                var customEvents = new CustomBearerEvents(idleTimeService, tokenBlacklistRepository, configuration);
                 await customEvents.TokenValidated(context);
             },
             OnMessageReceived = async context =>
             {
                 var serviceProvider = context.HttpContext.RequestServices;
                 var idleTimeService = serviceProvider.GetRequiredService<IIdleTimeTrackingService>();
+                var tokenBlacklistRepository = serviceProvider.GetRequiredService<ITokenBlacklistRepository>();
                 var configuration = serviceProvider.GetRequiredService<IConfiguration>();
-                var customEvents = new CustomBearerEvents(idleTimeService, configuration);
+                var customEvents = new CustomBearerEvents(idleTimeService, tokenBlacklistRepository, configuration);
                 await customEvents.MessageReceived(context);
             }
         };

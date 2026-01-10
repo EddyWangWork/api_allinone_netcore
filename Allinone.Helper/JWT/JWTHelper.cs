@@ -8,13 +8,14 @@ namespace Allinone.Helper.JWT
 {
     public static class JWTHelper
     {
-        public static string GenerateJwtToken(string username, int memberId, IConfiguration? configuration = null)
+        public static string GenerateJwtToken(string username, int memberId, IConfiguration? configuration = null, string role = "User")
         {
             var claims = new[]
             {
                 new Claim(JwtRegisteredClaimNames.Sub, username),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim("MemberId", memberId.ToString())
+                new Claim("MemberId", memberId.ToString()),
+                new Claim(ClaimTypes.Role, role)
             };
 
             // Use configuration values if available, otherwise use defaults

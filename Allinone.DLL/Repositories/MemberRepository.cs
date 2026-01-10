@@ -11,6 +11,7 @@ namespace Allinone.DLL.Repositories
         Task<IEnumerable<Member>> GetAllAsync();
         Task Add(Member member);
         void Update(Member member);
+        Task Delete(int memberId);
     }
 
     public class MemberRepository(DSContext context) : IMemberRepository
@@ -34,6 +35,16 @@ namespace Allinone.DLL.Repositories
         {
             context.Member.Update(member);
             context.SaveChanges();
+        }
+
+        public async Task Delete(int memberId)
+        {
+            var member = await context.Member.FindAsync(memberId);
+            if (member != null)
+            {
+                context.Member.Remove(member);
+                await context.SaveChangesAsync();
+            }
         }
     }
 }

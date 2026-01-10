@@ -1,6 +1,7 @@
 using Allinone.API.Configuration;
 using Allinone.API.Events;
 using Allinone.API.Services;
+using Allinone.DLL.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
@@ -38,24 +39,27 @@ namespace Allinone.API.Extensions
                         {
                             var serviceProvider = context.HttpContext.RequestServices;
                             var idleTimeService = serviceProvider.GetRequiredService<IIdleTimeTrackingService>();
+                            var tokenBlacklistRepository = serviceProvider.GetRequiredService<ITokenBlacklistRepository>();
                             var config = serviceProvider.GetRequiredService<IConfiguration>();
-                            var customEvents = new CustomBearerEvents(idleTimeService, config);
+                            var customEvents = new CustomBearerEvents(idleTimeService, tokenBlacklistRepository, config);
                             await customEvents.AuthenticationFailed(context);
                         },
                         OnTokenValidated = async context =>
                         {
                             var serviceProvider = context.HttpContext.RequestServices;
                             var idleTimeService = serviceProvider.GetRequiredService<IIdleTimeTrackingService>();
+                            var tokenBlacklistRepository = serviceProvider.GetRequiredService<ITokenBlacklistRepository>();
                             var config = serviceProvider.GetRequiredService<IConfiguration>();
-                            var customEvents = new CustomBearerEvents(idleTimeService, config);
+                            var customEvents = new CustomBearerEvents(idleTimeService, tokenBlacklistRepository, config);
                             await customEvents.TokenValidated(context);
                         },
                         OnMessageReceived = async context =>
                         {
                             var serviceProvider = context.HttpContext.RequestServices;
                             var idleTimeService = serviceProvider.GetRequiredService<IIdleTimeTrackingService>();
+                            var tokenBlacklistRepository = serviceProvider.GetRequiredService<ITokenBlacklistRepository>();
                             var config = serviceProvider.GetRequiredService<IConfiguration>();
-                            var customEvents = new CustomBearerEvents(idleTimeService, config);
+                            var customEvents = new CustomBearerEvents(idleTimeService, tokenBlacklistRepository, config);
                             await customEvents.MessageReceived(context);
                         }
                     };

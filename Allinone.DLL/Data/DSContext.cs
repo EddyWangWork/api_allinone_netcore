@@ -17,6 +17,7 @@ using Allinone.Domain.Sessions;
 using Allinone.Domain.Shops;
 using Allinone.Domain.Shops.ShopDiarys;
 using Allinone.Domain.Shops.ShopTypes;
+using Allinone.Domain.TokenBlacklist;
 using Allinone.Domain.Todolists;
 using Allinone.Domain.Trips;
 using Microsoft.EntityFrameworkCore;
@@ -51,6 +52,7 @@ namespace Allinone.DLL.Data
         public DbSet<DiaryDetail> DiaryDetail { get; set; }
         public DbSet<Auditlog> Auditlog { get; set; }
         public DbSet<UserSession> UserSession { get; set; }
+        public DbSet<TokenBlacklist> TokenBlacklist { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

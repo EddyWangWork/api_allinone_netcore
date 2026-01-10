@@ -1,8 +1,10 @@
 ﻿using Allinone.API.Services;
+using Allinone.DLL.Repositories;
 using Allinone.Domain;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
 using System.Text.Json;
 
 namespace Allinone.API.Events
@@ -10,11 +12,16 @@ namespace Allinone.API.Events
     public class CustomBearerEvents : JwtBearerEvents
     {
         private readonly IIdleTimeTrackingService _idleTimeService;
+        private readonly ITokenBlacklistRepository _tokenBlacklistRepository;
         private readonly IConfiguration _configuration;
 
-        public CustomBearerEvents(IIdleTimeTrackingService idleTimeService, IConfiguration configuration)
+        public CustomBearerEvents(
+            IIdleTimeTrackingService idleTimeService,
+            ITokenBlacklistRepository tokenBlacklistRepository,
+            IConfiguration configuration)
         {
             _idleTimeService = idleTimeService;
+            _tokenBlacklistRepository = tokenBlacklistRepository;
             _configuration = configuration;
         }
 
@@ -40,6 +47,28 @@ namespace Allinone.API.Events
 
         public override async Task TokenValidated(TokenValidatedContext context)
         {
+            // Extract token identifier (JTI) from the JWT
+            var jti = context.Principal?.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
+
+            // Check if token is blacklisted
+            if (!string.IsNullOrEmpty(jti) && await _tokenBlacklistRepository.IsTokenBlacklistedAsync(jti))
+            {
+                context.Fail("Token has been revoked");
+
+                var apiResponse = new ApiResponse(null)
+                {
+                    Success = false,
+                    Message = "Token-Revoked"
+                };
+
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                context.Response.ContentType = "application/json";
+
+                var json = JsonSerializer.Serialize(apiResponse);
+                await context.Response.WriteAsync(json);
+                return;
+            }
+
             // Get user ID from claims
             var userId = context.Principal?.FindFirst("MemberId")?.Value;
 

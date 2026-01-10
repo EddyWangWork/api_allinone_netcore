@@ -24,7 +24,7 @@ namespace Allinone.BLL.Members
             var member = await _memberRepository.GetAsync(name, password) ??
                 throw new NotFoundException($"Member record not found");
 
-            var token = JWTHelper.GenerateJwtToken(name, member.ID, configuration);
+            var token = JWTHelper.GenerateJwtToken(name, member.ID, configuration, member.Role);
 
             member.Token = token;
             member.LastLoginDate = DateTime.UtcNow.AddHours(8);
@@ -88,7 +88,7 @@ namespace Allinone.BLL.Members
             var memberDto = mapper.MapDto<Member, MemberDto>(newMember);
 
             // Create session for new user with auto-login
-            var token = JWTHelper.GenerateJwtToken(name, newMember.ID, configuration);
+            var token = JWTHelper.GenerateJwtToken(name, newMember.ID, configuration, newMember.Role);
 
             var handler = new JwtSecurityTokenHandler();
             var jwtToken = handler.ReadJwtToken(token);
