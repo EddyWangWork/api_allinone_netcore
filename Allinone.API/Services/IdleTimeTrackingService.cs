@@ -1,65 +1,78 @@
-using Allinone.Helper.Cache;
+using Allinone.DLL.Repositories;
+using Allinone.Domain.Sessions;
 
 namespace Allinone.API.Services
 {
     public interface IIdleTimeTrackingService
     {
-        void UpdateLastActivity(string userId);
-        bool IsUserActive(string userId, TimeSpan idleTimeout);
-        void RemoveUser(string userId);
-        DateTime? GetLastActivity(string userId);
+        Task UpdateLastActivityAsync(string userId);
+        Task<bool> IsUserActiveAsync(string userId, TimeSpan idleTimeout);
+        Task RemoveUserAsync(string userId);
+        Task<DateTime?> GetLastActivityAsync(string userId);
     }
 
     public class IdleTimeTrackingService : IIdleTimeTrackingService
     {
-        private readonly MemoryCacheHelper _cache;
-        private readonly string _cacheKeyPrefix = "user_activity_";
+        private readonly IUserSessionRepository _sessionRepository;
 
-        public IdleTimeTrackingService(MemoryCacheHelper cache)
+        public IdleTimeTrackingService(IUserSessionRepository sessionRepository)
         {
-            _cache = cache;
+            _sessionRepository = sessionRepository;
         }
 
-        public void UpdateLastActivity(string userId)
+        public async Task UpdateLastActivityAsync(string userId)
         {
-            if (string.IsNullOrEmpty(userId)) return;
+            if (string.IsNullOrEmpty(userId) || !int.TryParse(userId, out var memberId))
+                return;
 
-            var cacheKey = _cacheKeyPrefix + userId;
-            var lastActivity = DateTime.UtcNow;
+            var session = await _sessionRepository.GetByMemberIdAsync(memberId);
 
-            // Cache for 24 hours - this should be longer than any reasonable idle timeout
-            _cache.Set(cacheKey, lastActivity, TimeSpan.FromHours(24));
+            if (session == null)
+            {
+                // Create new session
+                session = new UserSession
+                {
+                    MemberID = memberId,
+                    LastActivityTime = DateTime.UtcNow,
+                    CreatedAt = DateTime.UtcNow
+                };
+                await _sessionRepository.CreateAsync(session);
+            }
+            else
+            {
+                // Update existing session
+                session.LastActivityTime = DateTime.UtcNow;
+                await _sessionRepository.UpdateAsync(session);
+            }
         }
 
-        public bool IsUserActive(string userId, TimeSpan idleTimeout)
+        public async Task<bool> IsUserActiveAsync(string userId, TimeSpan idleTimeout)
         {
-            if (string.IsNullOrEmpty(userId)) return false;
+            if (string.IsNullOrEmpty(userId) || !int.TryParse(userId, out var memberId))
+                return false;
 
-            var lastActivity = GetLastActivity(userId);
+            var lastActivity = await GetLastActivityAsync(userId);
             if (!lastActivity.HasValue) return false;
 
             var timeSinceLastActivity = DateTime.UtcNow - lastActivity.Value;
             return timeSinceLastActivity <= idleTimeout;
         }
 
-        public DateTime? GetLastActivity(string userId)
+        public async Task<DateTime?> GetLastActivityAsync(string userId)
         {
-            if (string.IsNullOrEmpty(userId)) return null;
+            if (string.IsNullOrEmpty(userId) || !int.TryParse(userId, out var memberId))
+                return null;
 
-            var cacheKey = _cacheKeyPrefix + userId;
-            if (_cache.TryGetValue<DateTime>(cacheKey, out var lastActivity))
-            {
-                return lastActivity;
-            }
-            return null;
+            var session = await _sessionRepository.GetByMemberIdAsync(memberId);
+            return session?.LastActivityTime;
         }
 
-        public void RemoveUser(string userId)
+        public async Task RemoveUserAsync(string userId)
         {
-            if (string.IsNullOrEmpty(userId)) return;
+            if (string.IsNullOrEmpty(userId) || !int.TryParse(userId, out var memberId))
+                return;
 
-            var cacheKey = _cacheKeyPrefix + userId;
-            _cache.Remove(cacheKey);
+            await _sessionRepository.DeleteAsync(memberId);
         }
     }
 }

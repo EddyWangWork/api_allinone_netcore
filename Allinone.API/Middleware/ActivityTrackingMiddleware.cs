@@ -22,7 +22,7 @@ namespace Allinone.API.Middleware
                 var userId = context.User.FindFirst("MemberId")?.Value;
                 if (!string.IsNullOrEmpty(userId))
                 {
-                    _idleTimeService.UpdateLastActivity(userId);
+                    await _idleTimeService.UpdateLastActivityAsync(userId);
                 }
             }
 

@@ -38,7 +38,7 @@ namespace Allinone.API.Events
             return Task.CompletedTask;
         }
 
-        public override Task TokenValidated(TokenValidatedContext context)
+        public override async Task TokenValidated(TokenValidatedContext context)
         {
             // Get user ID from claims
             var userId = context.Principal?.FindFirst("MemberId")?.Value;
@@ -50,9 +50,9 @@ namespace Allinone.API.Events
                 var idleTimeout = TimeSpan.FromMinutes(idleTimeoutMinutes);
 
                 // Check if user has been idle for too long
-                if (!_idleTimeService.IsUserActive(userId, idleTimeout))
+                if (!await _idleTimeService.IsUserActiveAsync(userId, idleTimeout))
                 {
-                    var lastActivity = _idleTimeService.GetLastActivity(userId);
+                    var lastActivity = await _idleTimeService.GetLastActivityAsync(userId);
 
                     // If user has no recorded activity, allow them through (first request)
                     // Otherwise, if they've been idle too long, mark as failed
@@ -70,16 +70,14 @@ namespace Allinone.API.Events
                         context.Response.ContentType = "application/json";
 
                         var json = JsonSerializer.Serialize(apiResponse);
-                        context.Response.WriteAsync(json);
-                        return Task.CompletedTask;
+                        await context.Response.WriteAsync(json);
+                        return;
                     }
                 }
 
                 // Update last activity time for active users
-                _idleTimeService.UpdateLastActivity(userId);
+                await _idleTimeService.UpdateLastActivityAsync(userId);
             }
-
-            return Task.CompletedTask;
         }
 
         public override Task MessageReceived(MessageReceivedContext context)

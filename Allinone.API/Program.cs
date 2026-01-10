@@ -86,11 +86,15 @@ builder.Services.AddScoped<IDiaryRepository, DiaryRepository>();
 builder.Services.AddScoped<IDiaryTypeRepository, DiaryTypeRepository>();
 builder.Services.AddScoped<IDiaryDetailRepository, DiaryDetailRepository>();
 builder.Services.AddScoped<IAuditlogRepository, AuditlogRepository>();
+builder.Services.AddScoped<IUserSessionRepository, UserSessionRepository>();
 #endregion
 
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<MemoryCacheHelper>();
 builder.Services.AddScoped<IIdleTimeTrackingService, IdleTimeTrackingService>();
+
+// Background service to clean up expired sessions
+builder.Services.AddHostedService<SessionCleanupService>();
 
 builder.Services.AddDbContext<DSContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DSConnection"),

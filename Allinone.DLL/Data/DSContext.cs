@@ -13,6 +13,7 @@ using Allinone.Domain.DS.DSItems;
 using Allinone.Domain.DS.Transactions;
 using Allinone.Domain.Kanbans;
 using Allinone.Domain.Members;
+using Allinone.Domain.Sessions;
 using Allinone.Domain.Shops;
 using Allinone.Domain.Shops.ShopDiarys;
 using Allinone.Domain.Shops.ShopTypes;
@@ -49,6 +50,7 @@ namespace Allinone.DLL.Data
         public DbSet<DiaryType> DiaryType { get; set; }
         public DbSet<DiaryDetail> DiaryDetail { get; set; }
         public DbSet<Auditlog> Auditlog { get; set; }
+        public DbSet<UserSession> UserSession { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

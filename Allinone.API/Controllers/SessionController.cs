@@ -26,7 +26,7 @@ namespace Allinone.API.Controllers
         /// </summary>
         /// <returns>Session information including last activity and remaining time</returns>
         [HttpGet("status")]
-        public IActionResult GetSessionStatus()
+        public async Task<IActionResult> GetSessionStatus()
         {
             var userId = User.FindFirst("MemberId")?.Value;
             if (string.IsNullOrEmpty(userId))
@@ -38,7 +38,7 @@ namespace Allinone.API.Controllers
                 });
             }
 
-            var lastActivity = _idleTimeService.GetLastActivity(userId);
+            var lastActivity = await _idleTimeService.GetLastActivityAsync(userId);
             var idleTimeoutMinutes = _configuration.GetValue<int>("Jwt:IdleTimeoutMinutes", 30);
             var idleTimeout = TimeSpan.FromMinutes(idleTimeoutMinutes);
 
@@ -74,7 +74,7 @@ namespace Allinone.API.Controllers
         /// </summary>
         /// <returns>Confirmation of activity update</returns>
         [HttpPost("refresh")]
-        public IActionResult RefreshActivity()
+        public async Task<IActionResult> RefreshActivity()
         {
             var userId = User.FindFirst("MemberId")?.Value;
             if (string.IsNullOrEmpty(userId))
@@ -86,7 +86,7 @@ namespace Allinone.API.Controllers
                 });
             }
 
-            _idleTimeService.UpdateLastActivity(userId);
+            await _idleTimeService.UpdateLastActivityAsync(userId);
 
             return Ok(new ApiResponse(new
             {
