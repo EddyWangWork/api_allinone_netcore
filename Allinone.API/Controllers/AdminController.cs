@@ -117,6 +117,8 @@ namespace Allinone.API.Controllers
             {
                 id = m.ID,
                 name = m.Name,
+                role = m.Role,
+                isActive = m.IsActive,
                 lastLoginDate = m.LastLoginDate
             });
 
@@ -297,7 +299,7 @@ namespace Allinone.API.Controllers
             {
                 var expireMinutes = _configuration.GetValue<int>("Jwt:ExpireMinutes", 60);
                 var tokenExpiry = DateTime.UtcNow.AddMinutes(expireMinutes);
-                
+
                 await _tokenBlacklistRepository.AddToBlacklistAsync(
                     session.TokenIdentifier,
                     tokenExpiry,
@@ -412,6 +414,70 @@ namespace Allinone.API.Controllers
                 forceLogout = request.ForceLogout
             });
         }
+
+        /// <summary>
+        /// Update member details (admin only)
+        /// </summary>
+        [HttpPut("members/{id}")]
+        public async Task<IActionResult> UpdateMember(int id, [FromBody] UpdateMemberRequest request)
+        {
+            var members = await _memberRepository.GetAllAsync();
+            var member = members.FirstOrDefault(m => m.ID == id);
+
+            if (member == null)
+            {
+                return NotFound(new ApiResponse(null)
+                {
+                    Success = false,
+                    Message = "Member not found"
+                });
+            }
+
+            // Check if new name conflicts with existing member (excluding current member)
+            if (!string.IsNullOrWhiteSpace(request.Name) && !member.Name.Equals(request.Name, StringComparison.OrdinalIgnoreCase))
+            {
+                if (members.Any(m => m.ID != id && m.Name.Equals(request.Name, StringComparison.OrdinalIgnoreCase)))
+                {
+                    return Conflict(new ApiResponse(null)
+                    {
+                        Success = false,
+                        Message = "A user with this name already exists"
+                    });
+                }
+                member.Name = request.Name;
+            }
+
+            // Validate role
+            if (!string.IsNullOrWhiteSpace(request.Role))
+            {
+                var validRoles = new[] { "Admin", "User" };
+                if (!validRoles.Contains(request.Role))
+                {
+                    return BadRequest(new ApiResponse(null)
+                    {
+                        Success = false,
+                        Message = $"Invalid role. Must be 'Admin' or 'User'"
+                    });
+                }
+                member.Role = request.Role;
+            }
+
+            member.IsActive = request.IsActive;
+
+            _memberRepository.Update(member);
+
+            return Ok(new
+            {
+                message = $"Member '{member.Name}' updated successfully",
+                member = new
+                {
+                    id = member.ID,
+                    name = member.Name,
+                    role = member.Role,
+                    isActive = member.IsActive
+                }
+            });
+        }
     }
 
     public class CreateMemberRequest
@@ -419,6 +485,13 @@ namespace Allinone.API.Controllers
         public string Name { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
         public string Role { get; set; } = "User";
+        public bool IsActive { get; set; } = true;
+    }
+
+    public class UpdateMemberRequest
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Role { get; set; } = string.Empty;
         public bool IsActive { get; set; } = true;
     }
 
