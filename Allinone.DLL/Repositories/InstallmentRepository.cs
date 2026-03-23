@@ -6,7 +6,7 @@ namespace Allinone.DLL.Repositories
 {
     public interface IInstallmentRepository
     {
-        Task<IEnumerable<Installment>> GetAllByMemberAsync(int memberId);
+        Task<IEnumerable<Installment>> GetAllByMemberAsync(int memberId, bool? isActive = null);
         Task<Installment?> GetByMemberAsync(int memberId, int id);
         Task Add(Installment entity);
         void Update(Installment entity);
@@ -15,11 +15,17 @@ namespace Allinone.DLL.Repositories
 
     public class InstallmentRepository(DSContext context) : IInstallmentRepository
     {
-        public async Task<IEnumerable<Installment>> GetAllByMemberAsync(int memberId) =>
-            await context.Installment
-                .Where(x => x.MemberID == memberId)
+        public async Task<IEnumerable<Installment>> GetAllByMemberAsync(int memberId, bool? isActive = null)
+        {
+            var query = context.Installment.Where(x => x.MemberID == memberId);
+
+            if (isActive.HasValue)
+                query = query.Where(x => x.IsActive == isActive.Value);
+
+            return await query
                 .OrderByDescending(x => x.UpdatedTime)
                 .ToListAsync();
+        }
 
         public async Task<Installment?> GetByMemberAsync(int memberId, int id) =>
             await context.Installment.FirstOrDefaultAsync(x => x.MemberID == memberId && x.ID == id);

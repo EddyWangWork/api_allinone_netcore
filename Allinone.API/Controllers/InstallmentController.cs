@@ -11,9 +11,16 @@ namespace Allinone.API.Controllers
     public class InstallmentController(IInstallmentService installmentService) : ControllerBase
     {
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll([FromQuery] bool? isActive = null)
         {
-            var response = await installmentService.GetAllAsync();
+            var response = await installmentService.GetAllAsync(isActive);
+            return Ok(response);
+        }
+
+        [HttpGet("summary")]
+        public async Task<IActionResult> GetSummary()
+        {
+            var response = await installmentService.GetSummaryAsync();
             return Ok(response);
         }
 

@@ -13,6 +13,7 @@ namespace Allinone.Domain.Installments
         public int TotalMonths { get; set; }
         public DateTime StartDate { get; set; }
         public bool IsActive { get; set; }
+        public string? Note { get; set; }
         public int MemberID { get; set; }
         public DateTime UpdatedTime { get; set; }
 
