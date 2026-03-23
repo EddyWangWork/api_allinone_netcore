@@ -11,9 +11,11 @@ namespace Allinone.API.Controllers
     public class InstallmentController(IInstallmentService installmentService) : ControllerBase
     {
         [HttpGet]
-        public async Task<IActionResult> GetAll([FromQuery] bool? isActive = null)
+        public async Task<IActionResult> GetAll(
+            [FromQuery] bool? isActive = null,
+            [FromQuery] InstallmentSortBy sortBy = InstallmentSortBy.UpdatedTime)
         {
-            var response = await installmentService.GetAllAsync(isActive);
+            var response = await installmentService.GetAllAsync(isActive, sortBy);
             return Ok(response);
         }
 
@@ -31,6 +33,13 @@ namespace Allinone.API.Controllers
             return Ok(response);
         }
 
+        [HttpGet("{id}/schedule")]
+        public async Task<IActionResult> GetSchedule(int id)
+        {
+            var response = await installmentService.GetScheduleAsync(id);
+            return Ok(response);
+        }
+
         [HttpPost]
         public async Task<IActionResult> Add(InstallmentAddReq req)
         {
@@ -42,6 +51,13 @@ namespace Allinone.API.Controllers
         public async Task<IActionResult> Update(int id, InstallmentAddReq req)
         {
             var response = await installmentService.Update(id, req);
+            return Ok(response);
+        }
+
+        [HttpPatch("{id}/toggle-active")]
+        public async Task<IActionResult> ToggleActive(int id)
+        {
+            var response = await installmentService.ToggleActiveAsync(id);
             return Ok(response);
         }
 

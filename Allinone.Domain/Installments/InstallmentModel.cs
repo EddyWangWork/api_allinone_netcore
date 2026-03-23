@@ -2,6 +2,15 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Allinone.Domain.Installments
 {
+    public enum InstallmentSortBy
+    {
+        UpdatedTime = 0,
+        Name = 1,
+        RemainingMonths = 2,
+        Progress = 3,
+        MonthlyAmount = 4
+    }
+
     public class InstallmentAddReq
     {
         [Required(ErrorMessage = "Name is required")]
@@ -38,6 +47,8 @@ namespace Allinone.Domain.Installments
         public decimal RemainingAmount { get; set; }
         public decimal ProgressPercentage { get; set; }
         public bool IsCompleted { get; set; }
+        public DateTime? UpcomingPaymentDate { get; set; }
+        public int? DaysUntilNextPayment { get; set; }
         public DateTime UpdatedTime { get; set; }
     }
 
@@ -50,5 +61,25 @@ namespace Allinone.Domain.Installments
         public decimal TotalRemainingAmount { get; set; }
         public decimal TotalPaidAmount { get; set; }
         public IEnumerable<InstallmentDto> Items { get; set; }
+    }
+
+    public class InstallmentScheduleDto
+    {
+        public int ID { get; set; }
+        public string Name { get; set; }
+        public decimal MonthlyAmount { get; set; }
+        public int TotalMonths { get; set; }
+        public int PaidMonths { get; set; }
+        public int RemainingMonths { get; set; }
+        public List<InstallmentScheduleItem> Schedule { get; set; }
+    }
+
+    public class InstallmentScheduleItem
+    {
+        public int MonthNumber { get; set; }
+        public DateTime PaymentDate { get; set; }
+        public decimal Amount { get; set; }
+        public bool IsPaid { get; set; }
+        public bool IsCurrent { get; set; }
     }
 }
