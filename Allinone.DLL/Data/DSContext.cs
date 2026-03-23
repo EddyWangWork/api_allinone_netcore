@@ -1,5 +1,6 @@
 ﻿using Allinone.Domain.Auditlogs;
 using Allinone.Domain.Diarys;
+using Allinone.Domain.Installments;
 using Allinone.Domain.Diarys.DiaryActivitys;
 using Allinone.Domain.Diarys.DiaryBooks;
 using Allinone.Domain.Diarys.DiaryDetails;
@@ -51,6 +52,7 @@ namespace Allinone.DLL.Data
         public DbSet<DiaryType> DiaryType { get; set; }
         public DbSet<DiaryDetail> DiaryDetail { get; set; }
         public DbSet<Auditlog> Auditlog { get; set; }
+        public DbSet<Installment> Installment { get; set; }
         public DbSet<UserSession> UserSession { get; set; }
         public DbSet<TokenBlacklist> TokenBlacklist { get; set; }
 

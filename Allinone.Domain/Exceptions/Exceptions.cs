@@ -77,6 +77,10 @@
     public class TripDetailNotFoundException(string message = "Trip Detail not found") : Exception(message) { }
 
 
+    //Installment
+    public class InstallmentNotFoundException(string message = "Installment not found") : Exception(message) { }
+    public class InstallmentBadRequestException(string message = "Installment not valid") : Exception(message) { }
+
     //General
     public class NotFoundException(string message) : Exception(message) { }
 

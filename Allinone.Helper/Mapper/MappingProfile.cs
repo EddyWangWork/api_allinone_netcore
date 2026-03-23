@@ -12,6 +12,7 @@ using Allinone.Domain.DS.Accounts;
 using Allinone.Domain.DS.DSItems;
 using Allinone.Domain.DS.Transactions;
 using Allinone.Domain.Enums;
+using Allinone.Domain.Installments;
 using Allinone.Domain.Kanbans;
 using Allinone.Domain.Members;
 using Allinone.Domain.Shops;
@@ -100,6 +101,9 @@ namespace Allinone.Helper.Mapper
                     opt.MapFrom(src => EnumHelper.GetEnumStringValue<EnumAuditlogType>(src.TypeID)))
                 .ForMember(dest => dest.ActionTypeName, opt =>
                     opt.MapFrom(src => EnumHelper.GetEnumStringValue<EnumAuditlogActionType>(src.ActionTypeID)));
+
+            CreateMap<InstallmentAddReq, Installment>();
+            CreateMap<Installment, InstallmentDto>();
         }
     }
 }

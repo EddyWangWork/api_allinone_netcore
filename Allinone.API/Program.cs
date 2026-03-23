@@ -4,6 +4,7 @@ using Allinone.API.Middleware;
 using Allinone.API.Services;
 using Allinone.BLL;
 using Allinone.BLL.Auditlogs;
+using Allinone.BLL.Installments;
 using Allinone.BLL.Diarys;
 using Allinone.BLL.DS.Accounts;
 using Allinone.BLL.DS.DSItems;
@@ -61,6 +62,7 @@ builder.Services.AddScoped<IDiaryService, DiaryService>();
 builder.Services.AddScoped<IDiaryTypeService, DiaryTypeService>();
 builder.Services.AddScoped<IDiaryDetailService, DiaryDetailService>();
 builder.Services.AddScoped<IAuditlogService, AuditlogService>();
+builder.Services.AddScoped<IInstallmentService, InstallmentService>();
 
 builder.Services.AddScoped<IMemberRepository, MemberRepository>();
 builder.Services.AddScoped<ITodolistRepository, TodolistRepository>();
@@ -86,6 +88,7 @@ builder.Services.AddScoped<IDiaryRepository, DiaryRepository>();
 builder.Services.AddScoped<IDiaryTypeRepository, DiaryTypeRepository>();
 builder.Services.AddScoped<IDiaryDetailRepository, DiaryDetailRepository>();
 builder.Services.AddScoped<IAuditlogRepository, AuditlogRepository>();
+builder.Services.AddScoped<IInstallmentRepository, InstallmentRepository>();
 builder.Services.AddScoped<IUserSessionRepository, UserSessionRepository>();
 builder.Services.AddScoped<ITokenBlacklistRepository, TokenBlacklistRepository>();
 #endregion
