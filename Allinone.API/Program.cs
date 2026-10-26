@@ -1,4 +1,4 @@
-using Allinone.API.Events;
+using Allinone.API.Extensions;
 using Allinone.API.Filters;
 using Allinone.API.Middleware;
 using Allinone.API.Services;
@@ -140,55 +140,7 @@ builder.Services.Configure<GzipCompressionProviderOptions>(options =>
     options.Level = System.IO.Compression.CompressionLevel.Fastest;
 });
 
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? "yourIssuer",
-            ValidAudience = builder.Configuration["Jwt:Audience"] ?? "yourAudience",
-            IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? "your_super_secret_key_that_is_long_enough_123!"))
-        };
-
-        // Configure events with dependency injection
-        options.Events = new JwtBearerEvents
-        {
-            OnAuthenticationFailed = async context =>
-            {
-                var serviceProvider = context.HttpContext.RequestServices;
-                var idleTimeService = serviceProvider.GetRequiredService<IIdleTimeTrackingService>();
-                var tokenBlacklistRepository = serviceProvider.GetRequiredService<ITokenBlacklistRepository>();
-                var configuration = serviceProvider.GetRequiredService<IConfiguration>();
-                var customEvents = new CustomBearerEvents(idleTimeService, tokenBlacklistRepository, configuration);
-                await customEvents.AuthenticationFailed(context);
-            },
-            OnTokenValidated = async context =>
-            {
-                var serviceProvider = context.HttpContext.RequestServices;
-                var idleTimeService = serviceProvider.GetRequiredService<IIdleTimeTrackingService>();
-                var tokenBlacklistRepository = serviceProvider.GetRequiredService<ITokenBlacklistRepository>();
-                var configuration = serviceProvider.GetRequiredService<IConfiguration>();
-                var customEvents = new CustomBearerEvents(idleTimeService, tokenBlacklistRepository, configuration);
-                await customEvents.TokenValidated(context);
-            },
-            OnMessageReceived = async context =>
-            {
-                var serviceProvider = context.HttpContext.RequestServices;
-                var idleTimeService = serviceProvider.GetRequiredService<IIdleTimeTrackingService>();
-                var tokenBlacklistRepository = serviceProvider.GetRequiredService<ITokenBlacklistRepository>();
-                var configuration = serviceProvider.GetRequiredService<IConfiguration>();
-                var customEvents = new CustomBearerEvents(idleTimeService, tokenBlacklistRepository, configuration);
-                await customEvents.MessageReceived(context);
-            }
-        };
-    });
-
-builder.Services.AddAuthorization();
+builder.Services.AddCustomJwtAuthentication(builder.Configuration);
 
 builder.Services.AddCors(options =>
 {

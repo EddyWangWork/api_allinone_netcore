@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Configuration;
+using Allinone.Domain;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -6,39 +6,37 @@ using System.Text;
 
 namespace Allinone.Helper.JWT
 {
+    public record JwtTokenResult(string Token, string TokenIdentifier, DateTime ExpiresAt);
+
     public static class JWTHelper
     {
-        public static string GenerateJwtToken(string username, int memberId, IConfiguration? configuration = null, string role = "User")
+        public const string MemberIdClaim = "MemberId";
+
+        public static JwtTokenResult GenerateJwtToken(string username, int memberId, string role, JwtSettings settings)
         {
+            var jti = Guid.NewGuid().ToString();
             var claims = new[]
             {
                 new Claim(JwtRegisteredClaimNames.Sub, username),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim("MemberId", memberId.ToString()),
+                new Claim(JwtRegisteredClaimNames.Jti, jti),
+                new Claim(MemberIdClaim, memberId.ToString()),
                 new Claim(ClaimTypes.Role, role)
             };
 
-            // Use configuration values if available, otherwise use defaults
-            var key = configuration?["Jwt:Key"] ?? "YourSuperSecretKeyHere123!";
-            var issuer = configuration?["Jwt:Issuer"] ?? "ProductServiceApp";
-            var audience = configuration?["Jwt:Audience"] ?? "ProductServiceUsers";
-            var expireMinutes = 60;
-            if (configuration != null && int.TryParse(configuration["Jwt:ExpireMinutes"], out var configMinutes))
-            {
-                expireMinutes = configMinutes;
-            }
+            var creds = new SigningCredentials(
+                new SymmetricSecurityKey(Encoding.UTF8.GetBytes(settings.Key)),
+                SecurityAlgorithms.HmacSha256);
 
-            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
-            var creds = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+            var expiresAt = DateTime.UtcNow.AddMinutes(settings.ExpireMinutes);
 
             var token = new JwtSecurityToken(
-                issuer: issuer,
-                audience: audience,
+                issuer: settings.Issuer,
+                audience: settings.Audience,
                 claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(expireMinutes),
+                expires: expiresAt,
                 signingCredentials: creds);
 
-            return new JwtSecurityTokenHandler().WriteToken(token);
+            return new JwtTokenResult(new JwtSecurityTokenHandler().WriteToken(token), jti, expiresAt);
         }
     }
 }
