@@ -741,7 +741,7 @@ namespace Allinone.DLL.Migrations
 
                     b.HasKey("ID");
 
-                    b.HasIndex("TodolistID");
+                    b.HasIndex("TodolistID", "UpdateDate");
 
                     b.ToTable("TodolistDone");
                 });

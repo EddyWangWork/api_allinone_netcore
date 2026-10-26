@@ -58,6 +58,9 @@ namespace Allinone.DLL.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<TodolistDone>()
+                .HasIndex(x => new { x.TodolistID, x.UpdateDate });
+
             // Prevent multiple cascade path error
             modelBuilder.Entity<DiaryDetail>()
                 .HasOne(d => d.Diary)
