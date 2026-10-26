@@ -641,10 +641,6 @@ namespace Allinone.DLL.Migrations
                     b.Property<int>("Star")
                         .HasColumnType("int");
 
-                    b.Property<string>("Types")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.HasKey("ID");
 
                     b.HasIndex("MemberID");
@@ -857,6 +853,21 @@ namespace Allinone.DLL.Migrations
                     b.HasKey("ID");
 
                     b.ToTable("TripDetailType");
+                });
+
+            modelBuilder.Entity("ShopShopType", b =>
+                {
+                    b.Property<int>("ShopID")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ShopTypeID")
+                        .HasColumnType("int");
+
+                    b.HasKey("ShopID", "ShopTypeID");
+
+                    b.HasIndex("ShopTypeID");
+
+                    b.ToTable("ShopShopType");
                 });
 
             modelBuilder.Entity("Allinone.Domain.Auditlogs.Auditlog", b =>
@@ -1152,6 +1163,21 @@ namespace Allinone.DLL.Migrations
                     b.Navigation("Trip");
 
                     b.Navigation("TripDetailType");
+                });
+
+            modelBuilder.Entity("ShopShopType", b =>
+                {
+                    b.HasOne("Allinone.Domain.Shops.Shop", null)
+                        .WithMany()
+                        .HasForeignKey("ShopID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Allinone.Domain.Shops.ShopTypes.ShopType", null)
+                        .WithMany()
+                        .HasForeignKey("ShopTypeID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Allinone.Domain.DS.DSItems.DSItem", b =>

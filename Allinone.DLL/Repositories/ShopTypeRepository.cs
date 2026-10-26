@@ -28,7 +28,6 @@ namespace Allinone.DLL.Repositories
 
         public async Task<IEnumerable<ShopType>> GetAllByMemberAsync(int memberid, List<int> ids) =>
             await context.ShopType
-                .AsNoTracking()
                 .Where(x => x.MemberID == memberid && ids.Contains(x.ID))
                 .OrderBy(x => x.Name)
                 .ToListAsync();
@@ -47,6 +46,14 @@ namespace Allinone.DLL.Repositories
 
         public async Task Delete(ShopType entity)
         {
+            // Join rows restrict deletion, so detach the type from shops first
+            var shops = await context.Shop
+                .Include(x => x.ShopTypes)
+                .Where(x => x.ShopTypes.Any(t => t.ID == entity.ID))
+                .ToListAsync();
+            foreach (var shop in shops)
+                shop.ShopTypes.Remove(shop.ShopTypes.First(t => t.ID == entity.ID));
+
             context.ShopType.Remove(entity);
             await context.SaveChangesAsync();
         }

@@ -72,6 +72,15 @@ namespace Allinone.DLL.Data
                 b.HasOne(x => x.TransferOutTransaction).WithMany().HasForeignKey(x => x.TransferOutTransactionID).OnDelete(DeleteBehavior.Restrict);
             });
 
+            modelBuilder.Entity<Shop>()
+                .HasMany(x => x.ShopTypes)
+                .WithMany()
+                .UsingEntity<Dictionary<string, object>>(
+                    "ShopShopType",
+                    r => r.HasOne<ShopType>().WithMany().HasForeignKey("ShopTypeID").OnDelete(DeleteBehavior.Restrict),
+                    l => l.HasOne<Shop>().WithMany().HasForeignKey("ShopID").OnDelete(DeleteBehavior.Cascade),
+                    j => j.HasKey("ShopID", "ShopTypeID"));
+
             // Prevent multiple cascade path error
             modelBuilder.Entity<DiaryDetail>()
                 .HasOne(d => d.Diary)

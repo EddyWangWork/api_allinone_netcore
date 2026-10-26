@@ -98,8 +98,7 @@ namespace Allinone.Tests.Services
                     Name = _shopName,
                     Remark = _shopRemark,
                     Star = _shopStar,
-                    Types = _shopTypes
-                },
+                    ShopTypes = [.. context.ShopType.Local.Where(x => x.ID <= 2)]                },
                 new Shop
                 {
                     ID = _shopId2,
@@ -110,7 +109,7 @@ namespace Allinone.Tests.Services
                     Name = _shopName2,
                     Remark = _shopRemark2,
                     Star = _shopStar2,
-                    Types = _shopTypes2
+                    ShopTypes = [.. context.ShopType.Local.Where(x => x.ID <= 2)]
                 }
             );
             context.SaveChanges();
@@ -152,7 +151,7 @@ namespace Allinone.Tests.Services
             Assert.NotNull(result);
             Assert.Equal(_shopId, result!.ID);
             Assert.Equal(_shopName, result!.Name);
-            Assert.Equal($"{_shopTypeId},{_shopTypeId2}", result!.Types);
+            Assert.Equal([_shopTypeId, _shopTypeId2], result!.ShopTypes.Select(x => x.ID).Order());
             Assert.Equal(_shopComment, result!.Comment);
             Assert.Equal(_shopIsVisited, result!.IsVisited);
             Assert.Equal(_shopLocation, result!.Location);
@@ -203,7 +202,7 @@ namespace Allinone.Tests.Services
             Assert.NotNull(result);
             Assert.Equal(3, result!.ID);
             Assert.Equal("new Shop", result!.Name);
-            Assert.Equal($"{_shopTypeId},{_shopTypeId2}", result!.Types);
+            Assert.Equal([_shopTypeId, _shopTypeId2], result!.ShopTypes.Select(x => x.ID).Order());
             Assert.Equal("new Shop Comment", result!.Comment);
             Assert.Equal(true, result!.IsVisited);
             Assert.Equal("new Shop Location", result!.Location);
@@ -275,7 +274,7 @@ namespace Allinone.Tests.Services
             Assert.NotNull(result);
             Assert.Equal(_shopId, result!.ID);
             Assert.Equal("updated Shop", result!.Name);
-            Assert.Equal($"{_shopTypeId}", result!.Types);
+            Assert.Equal([_shopTypeId], result!.ShopTypes.Select(x => x.ID));
             Assert.Equal("updated Shop Comment", result!.Comment);
             Assert.Equal(false, result!.IsVisited);
             Assert.Equal("updated Shop Location", result!.Location);

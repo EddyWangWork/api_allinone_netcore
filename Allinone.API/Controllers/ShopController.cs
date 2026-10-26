@@ -11,61 +11,28 @@ namespace Allinone.API.Controllers
     public class ShopController(IShopService shopService) : ControllerBase
     {
         [HttpGet]
-        [Route("GetShops")]
-        public async Task<IActionResult> GetShopsAsync()
-        {
-            var response = await shopService.GetAllByMemberAsync();
-            return Ok(response);
-        }
+        [HttpGet("GetShops")]
+        public async Task<IActionResult> GetShopsAsync() =>
+            Ok(await shopService.GetAllByMemberAsync());
 
+        [HttpGet("{id:int}")]
+        public async Task<IActionResult> Get(int id) =>
+            Ok(await shopService.Get(id));
+
+        // "addShop" kept as a legacy alias for existing clients
         [HttpPost]
-        [Route("addShop")]
-        public async Task<IActionResult> AddShop(ShopAddReq req)
-        {
-            var response = await shopService.Add(req);
-            return Ok(response);
-        }
+        [HttpPost("addShop")]
+        public async Task<IActionResult> Add(ShopAddReq req) =>
+            Ok(await shopService.Add(req));
 
-        [HttpPut("updateShop/{id}")]
-        public async Task<IActionResult> UpdateShop(int id, ShopAddReq req)
-        {
-            var response = await shopService.Update(id, req);
-            return Ok(response);
-        }
+        [HttpPut("{id:int}")]
+        [HttpPut("updateShop/{id:int}")]
+        public async Task<IActionResult> Update(int id, ShopAddReq req) =>
+            Ok(await shopService.Update(id, req));
 
-        [HttpDelete("deleteShop/{id}")]
-        public async Task<IActionResult> DeleteShop(int id)
-        {
-            var response = await shopService.Delete(id);
-            return Ok(response);
-        }
-
-        [HttpGet("{id}")]
-        public async Task<IActionResult> Get(int id)
-        {
-            var response = await shopService.Get(id);
-            return Ok(response);
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> Add(ShopAddReq req)
-        {
-            var response = await shopService.Add(req);
-            return Ok(response);
-        }
-
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, ShopAddReq req)
-        {
-            var response = await shopService.Update(id, req);
-            return Ok(response);
-        }
-
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
-        {
-            var response = await shopService.Delete(id);
-            return Ok(response);
-        }
+        [HttpDelete("{id:int}")]
+        [HttpDelete("deleteShop/{id:int}")]
+        public async Task<IActionResult> Delete(int id) =>
+            Ok(await shopService.Delete(id));
     }
 }

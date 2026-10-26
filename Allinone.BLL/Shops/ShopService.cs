@@ -25,19 +25,13 @@ namespace Allinone.BLL.Shops
         public async Task<IEnumerable<ShopDto>> GetAllByMemberAsync()
         {
             var shops = await shopRepository.GetAllByMemberAsync(MemberId);
-            var shopTypesEntities = await shopTypeRepository.GetAllByMemberAsync(MemberId);
 
             return shops.Select(item =>
             {
                 var dto = mapper.MapDto<Shop, ShopDto>(item);
-
-                var typesInt = item.Types.Split(',').Select(int.Parse).ToList();
-                var shopTypes = shopTypesEntities.Where(x => typesInt.Contains(x.ID));
-
-                dto.TypeList = [.. shopTypes.Select(x => x.Name)];
-
+                dto.TypeList = [.. item.ShopTypes.Select(x => x.Name).Order()];
                 return dto;
-            });
+            }).ToList();
         }
 
         public async Task<Shop> Get(int id)
@@ -97,9 +91,9 @@ namespace Allinone.BLL.Shops
                     await shopTypeRepository.GetAllByMemberAsync(MemberId, typeList),
                     new ShopTypeNotFoundException());
 
-            entity.Types = validShopTypes.Count > 1
-                ? string.Join(",", validShopTypes.Select(x => x.ID))
-                : validShopTypes.FirstOrDefault().ID.ToString() ?? "";
+            entity.ShopTypes.Clear();
+            foreach (var shopType in validShopTypes)
+                entity.ShopTypes.Add(shopType);
         }
     }
 }

@@ -109,15 +109,7 @@ namespace Allinone.BLL.Shops
         private ShopDto ToShopDto(Shop shop, IEnumerable<ShopType> shopTypes)
         {
             var dto = mapper.MapDto<ShopDto>(shop);
-            var typeIntList = shop.Types.ToIntList();
-
-            dto.TypeList = typeIntList.IsNotNullOrEmpty()
-                ? []
-                : shopTypes
-                    .Where(x => typeIntList.Contains(x.ID))
-                    .Select(x => x.Name)
-                    .ToList();
-
+            dto.TypeList = shop.ShopTypes.Select(x => x.Name).Order().ToList();
             return dto;
         }
 

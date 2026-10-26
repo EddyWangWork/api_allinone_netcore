@@ -104,8 +104,7 @@ namespace Allinone.Tests.Services
                     Name = _shopName,
                     Remark = _shopRemark,
                     Star = _shopStar,
-                    Types = _shopTypes
-                },
+                    ShopTypes = [.. context.ShopType.Local.Where(x => x.ID <= 2)]                },
                 new Shop
                 {
                     ID = _shopId2,
@@ -116,7 +115,7 @@ namespace Allinone.Tests.Services
                     Name = _shopName2,
                     Remark = _shopRemark2,
                     Star = _shopStar2,
-                    Types = _shopTypes2
+                    ShopTypes = [.. context.ShopType.Local.Where(x => x.ID <= 2)]
                 }
             );
 

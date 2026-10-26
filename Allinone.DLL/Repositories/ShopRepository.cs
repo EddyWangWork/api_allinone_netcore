@@ -35,20 +35,26 @@ namespace Allinone.DLL.Repositories
             await context.Shop.AnyAsync(x => x.MemberID == memberid && x.ID == id);
 
         public async Task<Shop>? GetByMemberAsync(int memberid, int id) =>
-            await context.Shop.FirstOrDefaultAsync(x => x.MemberID == memberid && x.ID == id);
+            await context.Shop
+                .Include(x => x.ShopTypes)
+                .FirstOrDefaultAsync(x => x.MemberID == memberid && x.ID == id);
 
         public async Task<Shop>? GetAsync(int id) =>
-            await context.Shop.FindAsync(id);
+            await context.Shop
+                .Include(x => x.ShopTypes)
+                .FirstOrDefaultAsync(x => x.ID == id);
 
         public async Task<IEnumerable<Shop>> GetAllByMemberAsync(int memberid) =>
             await context.Shop
                 .Where(x => x.MemberID == memberid)
                 .Include(x => x.ShopDiarys)
+                .Include(x => x.ShopTypes)
                 .ToListAsync();
 
         public async Task<IEnumerable<Shop>> GetAllAsync() =>
             await context.Shop
                 .Include(x => x.ShopDiarys)
+                .Include(x => x.ShopTypes)
                 .ToListAsync();
 
         public async Task Add(Shop entity)
