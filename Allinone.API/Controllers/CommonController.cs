@@ -1,4 +1,5 @@
 ﻿using Allinone.BLL;
+using Allinone.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,21 +11,13 @@ namespace Allinone.API.Controllers
     public class CommonController(ICommonService commonService) : ControllerBase
     {
         [AllowAnonymous]
-        [HttpGet]
-        [Route("getDSTransTypes")]
-        public async Task<IActionResult> Get()
-        {
-            var response = await commonService.GetDSTransTypes();
-            return Ok(response);
-        }
+        [HttpGet("getDSTransTypes")]
+        public ActionResult<IReadOnlyList<EnumModel>> GetDSTransTypes() =>
+            Ok(commonService.GetDSTransTypes());
 
         [AllowAnonymous]
-        [HttpGet]
-        [Route("getTodolistTypes")]
-        public async Task<IActionResult> GetTodolistTypes()
-        {
-            var response = await commonService.GetTodolistTypes();
-            return Ok(response);
-        }
+        [HttpGet("getTodolistTypes")]
+        public ActionResult<IReadOnlyList<EnumModel>> GetTodolistTypes() =>
+            Ok(commonService.GetTodolistTypes());
     }
 }

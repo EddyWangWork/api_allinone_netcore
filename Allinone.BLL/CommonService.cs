@@ -1,23 +1,33 @@
-﻿using Allinone.Helper.Cache;
+using Allinone.Domain.Enums;
 
 namespace Allinone.BLL
 {
     public interface ICommonService
     {
-        Task<object> GetDSTransTypes();
-        Task<object> GetTodolistTypes();
+        IReadOnlyList<EnumModel> GetDSTransTypes();
+        IReadOnlyList<EnumModel> GetTodolistTypes();
     }
 
-    public class CommonService(MemoryCacheHelper memoryCacheHelper) : ICommonService
+    public class CommonService : ICommonService
     {
-        public async Task<object> GetDSTransTypes()
-        {
-            return MemoryCacheHelper.CacheDSTranTypeList;
-        }
+        private static readonly IReadOnlyList<EnumModel> DSTransTypes =
+            CreateEnumModels<EnumDSTranType>();
 
-        public async Task<object> GetTodolistTypes()
-        {
-            return MemoryCacheHelper.CacheTodolistTypeList;
-        }
+        private static readonly IReadOnlyList<EnumModel> TodolistTypes =
+            CreateEnumModels<EnumTodolistType>();
+
+        public IReadOnlyList<EnumModel> GetDSTransTypes() => DSTransTypes;
+
+        public IReadOnlyList<EnumModel> GetTodolistTypes() => TodolistTypes;
+
+        private static IReadOnlyList<EnumModel> CreateEnumModels<TEnum>()
+            where TEnum : struct, Enum =>
+            Enum.GetValues<TEnum>()
+                .Select(value => new EnumModel
+                {
+                    ID = Convert.ToInt32(value),
+                    Name = value.ToString()
+                })
+                .ToArray();
     }
 }

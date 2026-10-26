@@ -1,50 +1,36 @@
 ﻿using Allinone.BLL;
-using Allinone.BLL.DS.Accounts;
-using Allinone.Helper.Cache;
-using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Allinone.Domain.Enums;
 
 namespace Allinone.Tests.Services
 {
     public class CommonServiceTest
     {
-        private readonly CommonService _commonService;
+        private readonly ICommonService _commonService = new CommonService();
 
-
-        public CommonServiceTest()
+        [Fact]
+        public void GetDSTransTypes_Returns_AllTransactionTypes()
         {
-            var services = new ServiceCollection();
+            var result = _commonService.GetDSTransTypes();
 
-            services.AddMemoryCache();
-            services.AddSingleton<MemoryCacheHelper>();
-
-            var memoryCacheHelper = services.BuildServiceProvider().GetRequiredService<MemoryCacheHelper>();
-
-            _commonService = new CommonService(memoryCacheHelper);
+            Assert.Equal(
+                Enum.GetValues<EnumDSTranType>().Select(value => (int)value),
+                result.Select(type => type.ID));
+            Assert.Equal(
+                Enum.GetValues<EnumDSTranType>().Select(value => value.ToString()),
+                result.Select(type => type.Name));
         }
 
         [Fact]
-        public async Task GetDSTransTypes_Returns_Success()
+        public void GetTodolistTypes_Returns_AllTodolistTypes()
         {
-            // Act
-            var result = await _commonService.GetDSTransTypes();
+            var result = _commonService.GetTodolistTypes();
 
-            // Assert
-            Assert.NotNull(result);
-        }
-
-        [Fact]
-        public async Task GetTodolistTypes_Returns_Success()
-        {
-            // Act
-            var result = await _commonService.GetTodolistTypes();
-
-            // Assert
-            Assert.NotNull(result);
+            Assert.Equal(
+                Enum.GetValues<EnumTodolistType>().Select(value => (int)value),
+                result.Select(type => type.ID));
+            Assert.Equal(
+                Enum.GetValues<EnumTodolistType>().Select(value => value.ToString()),
+                result.Select(type => type.Name));
         }
     }
 }
