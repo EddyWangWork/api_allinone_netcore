@@ -1,4 +1,4 @@
-﻿using Allinone.DLL.Repositories;
+using Allinone.DLL.Repositories;
 using Allinone.Domain.DS.DSItems;
 using Allinone.Domain.Exceptions;
 using Allinone.Helper.Mapper;
@@ -8,8 +8,7 @@ namespace Allinone.BLL.DS.DSItems
     public interface IDSItemSubService
     {
         Task<IEnumerable<DSItemSubDto>> GetAllByMemberAsync();
-
-        Task<DSItemSub> Get(int id);
+        Task<DSItemSubDto> Get(int id);
         Task<DSItemSubDto> Add(DSItemSubAddReq req);
         Task<DSItemSubDto> Update(int id, DSItemSubAddReq req);
         Task<DSItemSubDto> Delete(int id);
@@ -20,89 +19,71 @@ namespace Allinone.BLL.DS.DSItems
         IDSItemSubRepository dsItemSubRepository,
         IMapModel mapper) : BaseBLL, IDSItemSubService
     {
-        public async Task<IEnumerable<DSItemSubDto>> GetAllByMemberAsync()
-        {
-            var dsitems = await dsItemRepository.GetAllByMemberAsync(MemberId);
-            var dsSubItems = dsitems.Where(x => x.DSItemSubs.Any());
+        public async Task<IEnumerable<DSItemSubDto>> GetAllByMemberAsync() =>
+            await dsItemSubRepository.GetAllByMemberAsync(MemberId);
 
-            return dsSubItems.SelectMany(item => item.DSItemSubs.Select(itemSub => new DSItemSubDto
-            {
-                ID = itemSub.ID,
-                Name = itemSub.Name,
-                IsActive = itemSub.IsActive,
-                DSItemID = item.ID,
-                DSItemName = item.Name
-            }));
-        }
-
-        public async Task<DSItemSub> Get(int id)
+        public async Task<DSItemSubDto> Get(int id)
         {
-            return await dsItemSubRepository.GetAsync(id) ?? throw new DSItemSubNotFoundException();
+            var entity = await GetOwnedAsync(id);
+            return ToDto(entity);
         }
 
         public async Task<DSItemSubDto> Add(DSItemSubAddReq req)
         {
-            if (MemberId == 0) throw new MemberNotFoundException();
-
-            _ = await dsItemRepository.IsExistByMemberAndIdAsync(MemberId, req.DSItemID) ?
-                true : throw new DSItemNotFoundException("Invalid DSItemID");
+            EnsureMember();
+            await EnsureOwnedItemAsync(req.DSItemID);
 
             var entity = mapper.MapDto<DSItemSubAddReq, DSItemSub>(req);
-
             await dsItemSubRepository.Add(entity);
 
-            return new DSItemSubDto
-            {
-                ID = entity.ID,
-                DSItemID = entity.DSItemID,
-                IsActive = entity.IsActive,
-                Name = entity.Name,
-            };
+            return ToDto(entity);
         }
 
         public async Task<DSItemSubDto> Update(int id, DSItemSubAddReq req)
         {
-            if (MemberId == 0) throw new MemberNotFoundException();
+            EnsureMember();
+            await EnsureOwnedItemAsync(req.DSItemID);
 
-            _ = await dsItemRepository.IsExistByMemberAndIdAsync(MemberId, req.DSItemID) ?
-                true : throw new DSItemNotFoundException("Invalid DSItemID");
-
-            _ = await dsItemRepository.IsExistByMemberAndSubIdAsync(MemberId, id) ?
-                true : throw new DSItemSubNotFoundException("Invalid DSItemSubID");
-
-            var entity = await dsItemSubRepository.GetAsync(id) ?? throw new DSItemSubNotFoundException();
+            var entity = await GetOwnedAsync(id);
 
             mapper.Map(req, entity);
+            await dsItemSubRepository.Update(entity);
 
-            dsItemSubRepository.Update(entity);
-
-            return new DSItemSubDto
-            {
-                ID = entity.ID,
-                DSItemID = entity.DSItemID,
-                IsActive = entity.IsActive,
-                Name = entity.Name,
-            };
+            return ToDto(entity);
         }
 
         public async Task<DSItemSubDto> Delete(int id)
         {
-            if (MemberId == 0) throw new MemberNotFoundException();
+            EnsureMember();
 
-            _ = await dsItemRepository.IsExistByMemberAndSubIdAsync(MemberId, id) ?
-                true : throw new DSItemSubNotFoundException("Invalid DSItemSubID");
+            var entity = await GetOwnedAsync(id);
+            await dsItemSubRepository.Delete(entity);
 
-            var entity = await dsItemSubRepository.GetAsync(id) ?? throw new DSItemSubNotFoundException();
-
-            dsItemSubRepository.Delete(entity);
-
-            return new DSItemSubDto
-            {
-                ID = entity.ID,
-                DSItemID = entity.DSItemID,
-                IsActive = entity.IsActive,
-                Name = entity.Name,
-            };
+            return ToDto(entity);
         }
+
+        private void EnsureMember()
+        {
+            if (MemberId == 0) throw new MemberNotFoundException();
+        }
+
+        private async Task EnsureOwnedItemAsync(int dsItemId)
+        {
+            if (!await dsItemRepository.IsExistByMemberAndIdAsync(MemberId, dsItemId))
+                throw new DSItemNotFoundException("Invalid DSItemID");
+        }
+
+        private async Task<DSItemSub> GetOwnedAsync(int id) =>
+            await dsItemSubRepository.GetByMemberAsync(MemberId, id)
+                ?? throw new DSItemSubNotFoundException("Invalid DSItemSubID");
+
+        private static DSItemSubDto ToDto(DSItemSub entity) => new()
+        {
+            ID = entity.ID,
+            Name = entity.Name,
+            IsActive = entity.IsActive,
+            DSItemID = entity.DSItemID,
+            DSItemName = entity.DSItem?.Name
+        };
     }
 }

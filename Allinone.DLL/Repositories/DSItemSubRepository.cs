@@ -7,11 +7,12 @@ namespace Allinone.DLL.Repositories
     public interface IDSItemSubRepository
     {
         Task<bool> IsExist(string name);
-        Task<DSItemSub>? GetAsync(int id);
-        Task<IEnumerable<DSItemSub>> GetAllAsync();
+        Task<DSItemSub?> GetAsync(int id);
+        Task<DSItemSub?> GetByMemberAsync(int memberId, int id);
+        Task<List<DSItemSubDto>> GetAllByMemberAsync(int memberId);
         Task Add(DSItemSub entity);
-        void Update(DSItemSub entity);
-        void Delete(DSItemSub entity);
+        Task Update(DSItemSub entity);
+        Task Delete(DSItemSub entity);
     }
 
     public class DSItemSubRepository(DSContext context) : IDSItemSubRepository
@@ -19,11 +20,29 @@ namespace Allinone.DLL.Repositories
         public async Task<bool> IsExist(string name) =>
            await context.DSItemSub.AnyAsync(x => x.Name == name);
 
-        public async Task<DSItemSub>? GetAsync(int id) =>
+        public async Task<DSItemSub?> GetAsync(int id) =>
             await context.DSItemSub.FindAsync(id);
 
-        public async Task<IEnumerable<DSItemSub>> GetAllAsync() =>
-            await context.DSItemSub.ToListAsync();
+        // Scoped to the owning member through the parent DSItem
+        public async Task<DSItemSub?> GetByMemberAsync(int memberId, int id) =>
+            await context.DSItemSub
+                .FirstOrDefaultAsync(x => x.ID == id && x.DSItem.MemberID == memberId);
+
+        public async Task<List<DSItemSubDto>> GetAllByMemberAsync(int memberId) =>
+            await context.DSItemSub
+                .AsNoTracking()
+                .Where(x => x.DSItem.MemberID == memberId)
+                .OrderBy(x => x.DSItemID)
+                .ThenBy(x => x.ID)
+                .Select(x => new DSItemSubDto
+                {
+                    ID = x.ID,
+                    Name = x.Name,
+                    IsActive = x.IsActive,
+                    DSItemID = x.DSItemID,
+                    DSItemName = x.DSItem.Name
+                })
+                .ToListAsync();
 
         public async Task Add(DSItemSub entity)
         {
@@ -31,16 +50,16 @@ namespace Allinone.DLL.Repositories
             await context.SaveChangesAsync();
         }
 
-        public void Update(DSItemSub entity)
+        public async Task Update(DSItemSub entity)
         {
             context.DSItemSub.Update(entity);
-            context.SaveChanges();
+            await context.SaveChangesAsync();
         }
 
-        public void Delete(DSItemSub entity)
+        public async Task Delete(DSItemSub entity)
         {
             context.DSItemSub.Remove(entity);
-            context.SaveChanges();
+            await context.SaveChangesAsync();
         }
     }
 }
