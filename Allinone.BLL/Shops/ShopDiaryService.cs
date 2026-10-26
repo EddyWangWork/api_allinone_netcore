@@ -14,116 +14,95 @@ namespace Allinone.BLL.Shops
     {
         Task<IEnumerable<ShopDiaryDto>> GetShopDiaries();
         Task<IEnumerable<ShopDiaryDto>> GetShopDiaries(int shopId);
-        Task<IEnumerable<ShopDiary>> GetAllByMemberAsync();
 
-        Task<ShopDiary> Get(int id);
-        Task<ShopDiary> Add(ShopDiaryAddReq req);
-        Task<ShopDiary> Update(int id, ShopDiaryAddReq req);
-        Task<ShopDiary> Delete(int id);
+        Task<ShopDiaryDto> Get(int id);
+        Task<ShopDiaryDto> Add(ShopDiaryAddReq req);
+        Task<ShopDiaryDto> Update(int id, ShopDiaryAddReq req);
+        Task<ShopDiaryDto> Delete(int id);
     }
 
     public class ShopDiaryService(
         IAuditlogService _auditlogService,
         IShopRepository _shopRepository,
-        IShopTypeRepository _shopTypeRepository,
         IShopDiaryRepository _shopDiaryRepository,
         IMapModel mapper) : BaseBLL, IShopDiaryService
     {
-        public async Task<IEnumerable<ShopDiaryDto>> GetShopDiaries()
+        private static readonly JsonSerializerSettings AuditJsonSettings = new()
         {
-            var shopDiarys = await _shopDiaryRepository.GetAllByMemberAsync(MemberId);
+            ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+        };
 
-            return shopDiarys.Select(x => ToShopDiaryDto(x));
-        }
+        public async Task<IEnumerable<ShopDiaryDto>> GetShopDiaries() =>
+            (await _shopDiaryRepository.GetAllByMemberAsync(MemberId)).Select(ToShopDiaryDto);
 
-        public async Task<IEnumerable<ShopDiaryDto>> GetShopDiaries(int shopId)
+        public async Task<IEnumerable<ShopDiaryDto>> GetShopDiaries(int shopId) =>
+            (await _shopDiaryRepository.GetAllByMemberAsync(MemberId, shopId)).Select(ToShopDiaryDto);
+
+        public async Task<ShopDiaryDto> Get(int id) =>
+            ToShopDiaryDto(await GetOwnedDiary(id));
+
+        public async Task<ShopDiaryDto> Add(ShopDiaryAddReq req)
         {
-            var shopDiarys = await _shopDiaryRepository.GetAllByMemberAsync(MemberId, shopId);
-
-            return shopDiarys.Select(x => ToShopDiaryDto(x));
-        }
-
-        public async Task<IEnumerable<ShopDiary>> GetAllByMemberAsync()
-        {
-            return await _shopDiaryRepository.GetAllByMemberAsync(MemberId);
-        }
-
-        public async Task<ShopDiary> Get(int id)
-        {
-            return await _shopDiaryRepository.GetByMemberAndDiaryIdAsync(MemberId, id) ?? throw new ShopDiaryNotFoundException();
-        }
-
-        public async Task<ShopDiary> Add(ShopDiaryAddReq req)
-        {
-            if (MemberId == 0) throw new MemberNotFoundException();
-            if (!await _shopRepository.IsExistByMemberAsync(MemberId, req.ShopID)) throw new ShopBadRequestException();
-            var shopEntity = await _shopRepository.GetByMemberAsync(MemberId, req.ShopID) ?? throw new ShopDiaryNotFoundException();
+            EnsureMember();
+            var shop = await GetOwnedShop(req.ShopID);
 
             var entity = mapper.MapDto<ShopDiaryAddReq, ShopDiary>(req);
+            entity.Shop = shop;
 
-            await _shopDiaryRepository.Add(entity);
-            await _auditlogService.LogShopDiaryNew(
-                entity.Shop.Name, MemberId, JsonConvert.SerializeObject(entity, new JsonSerializerSettings
-                {
-                    ReferenceLoopHandling = ReferenceLoopHandling.Ignore
-                }));
-            return entity;
+            await _shopDiaryRepository.AddAsync(entity);
+            await _auditlogService.LogShopDiaryNew(shop.Name, MemberId, Serialize(entity));
+            return ToShopDiaryDto(entity);
         }
 
-        public async Task<ShopDiary> Update(int id, ShopDiaryAddReq req)
+        public async Task<ShopDiaryDto> Update(int id, ShopDiaryAddReq req)
         {
-            if (MemberId == 0) throw new MemberNotFoundException();
-            if (!await _shopRepository.IsExistByMemberAsync(MemberId, req.ShopID)) throw new ShopBadRequestException();
+            EnsureMember();
+            var shop = await GetOwnedShop(req.ShopID);
+            var entity = await GetOwnedDiary(id);
 
-            var entity = await _shopDiaryRepository.GetByMemberAndDiaryIdAsync(MemberId, id) ?? throw new ShopDiaryNotFoundException();
-            var shopEntity = await _shopRepository.GetByMemberAsync(MemberId, req.ShopID) ?? throw new ShopDiaryNotFoundException();
-
+            var oldValue = Serialize(entity);
             mapper.Map(req, entity);
+            entity.Shop = shop;
 
-            _shopDiaryRepository.Update(entity);
-            await _auditlogService.LogShopDiaryUpdate(
-               entity.Shop.Name, MemberId,
-               JsonConvert.SerializeObject(entity, new JsonSerializerSettings
-               {
-                   ReferenceLoopHandling = ReferenceLoopHandling.Ignore
-               }),
-               JsonConvert.SerializeObject(req, new JsonSerializerSettings
-               {
-                   ReferenceLoopHandling = ReferenceLoopHandling.Ignore
-               }));
-            return entity;
+            await _shopDiaryRepository.UpdateAsync(entity);
+            await _auditlogService.LogShopDiaryUpdate(shop.Name, MemberId, Serialize(entity), oldValue);
+            return ToShopDiaryDto(entity);
         }
 
-        public async Task<ShopDiary> Delete(int id)
+        public async Task<ShopDiaryDto> Delete(int id)
         {
-            if (MemberId == 0) throw new MemberNotFoundException();
+            EnsureMember();
+            var entity = await GetOwnedDiary(id);
 
-            var entity = await _shopDiaryRepository.GetByMemberAndDiaryIdAsync(MemberId, id) ?? throw new ShopDiaryNotFoundException();
-
-            _shopDiaryRepository.Delete(entity);
-
-            return entity;
+            await _shopDiaryRepository.DeleteAsync(entity);
+            return ToShopDiaryDto(entity);
         }
 
         //Private
-        private ShopDto ToShopDto(Shop shop, IEnumerable<ShopType> shopTypes)
+        private void EnsureMember()
         {
-            var dto = mapper.MapDto<ShopDto>(shop);
-            dto.TypeList = shop.ShopTypes.Select(x => x.Name).Order().ToList();
-            return dto;
+            if (MemberId == 0) throw new MemberNotFoundException();
         }
 
-        private static ShopDiaryDto ToShopDiaryDto(ShopDiary shopDiary)
+        private async Task<ShopDiary> GetOwnedDiary(int id) =>
+            await _shopDiaryRepository.GetByMemberAndDiaryIdAsync(MemberId, id) ?? throw new ShopDiaryNotFoundException();
+
+        private async Task<Shop> GetOwnedShop(int shopId)
         {
-            return new ShopDiaryDto
-            {
-                ID = shopDiary.ID,
-                Comment = shopDiary.Comment,
-                Date = shopDiary.Date,
-                Remark = shopDiary.Remark,
-                ShopID = shopDiary.Shop.ID,
-                ShopName = shopDiary.Shop.Name
-            };
+            if (!await _shopRepository.IsExistByMemberAsync(MemberId, shopId)) throw new ShopBadRequestException();
+            return await _shopRepository.GetByMemberAsync(MemberId, shopId) ?? throw new ShopBadRequestException();
         }
+
+        private static string Serialize(object value) => JsonConvert.SerializeObject(value, AuditJsonSettings);
+
+        private static ShopDiaryDto ToShopDiaryDto(ShopDiary shopDiary) => new()
+        {
+            ID = shopDiary.ID,
+            Comment = shopDiary.Comment,
+            Date = shopDiary.Date,
+            Remark = shopDiary.Remark,
+            ShopID = shopDiary.ShopID,
+            ShopName = shopDiary.Shop?.Name ?? string.Empty
+        };
     }
 }

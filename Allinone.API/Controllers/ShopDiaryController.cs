@@ -10,70 +10,31 @@ namespace Allinone.API.Controllers
     [Route("[controller]")]
     public class ShopDiaryController(IShopDiaryService shopDiaryService) : ControllerBase
     {
-        [HttpGet]
-        [Route("getShopDiaries")]
-        public async Task<IActionResult> GetShopDiarysAsync()
-        {
-            var response = await shopDiaryService.GetShopDiaries();
-            return Ok(response);
-        }
+        [HttpGet("getShopDiaries")]
+        public async Task<IActionResult> GetShopDiaries() =>
+            Ok(await shopDiaryService.GetShopDiaries());
 
-        [HttpGet]
-        [Route("getShopDiariesByShop/{shopId}")]
-        public async Task<IActionResult> getShopDiariesByShopAsync(int shopId)
-        {
-            var response = await shopDiaryService.GetShopDiaries(shopId);
-            return Ok(response);
-        }
-
-        [HttpPost]
-        [Route("addShopDiary")]
-        public async Task<IActionResult> AddShopDiary(ShopDiaryAddReq req)
-        {
-            var response = await shopDiaryService.Add(req);
-            return Ok(response);
-        }
-
-        [HttpPut("updateShopDiary/{id}")]
-        public async Task<IActionResult> UpdateShopDiary(int id, ShopDiaryAddReq req)
-        {
-            var response = await shopDiaryService.Update(id, req);
-            return Ok(response);
-        }
-
-        [HttpDelete("deleteShopDiary/{id}")]
-        public async Task<IActionResult> DeleteShopDiary(int id)
-        {
-            var response = await shopDiaryService.Delete(id);
-            return Ok(response);
-        }
+        [HttpGet("getShopDiariesByShop/{shopId}")]
+        public async Task<IActionResult> GetShopDiariesByShop(int shopId) =>
+            Ok(await shopDiaryService.GetShopDiaries(shopId));
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> Get(int id)
-        {
-            var response = await shopDiaryService.Get(id);
-            return Ok(response);
-        }
+        public async Task<IActionResult> Get(int id) =>
+            Ok(await shopDiaryService.Get(id));
 
         [HttpPost]
-        public async Task<IActionResult> Add(ShopDiaryAddReq req)
-        {
-            var response = await shopDiaryService.Add(req);
-            return Ok(response);
-        }
+        [HttpPost("addShopDiary")]
+        public async Task<IActionResult> Add(ShopDiaryAddReq req) =>
+            Ok(await shopDiaryService.Add(req));
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, ShopDiaryAddReq req)
-        {
-            var response = await shopDiaryService.Update(id, req);
-            return Ok(response);
-        }
+        [HttpPut("updateShopDiary/{id}")]
+        public async Task<IActionResult> Update(int id, ShopDiaryAddReq req) =>
+            Ok(await shopDiaryService.Update(id, req));
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
-        {
-            var response = await shopDiaryService.Delete(id);
-            return Ok(response);
-        }
+        [HttpDelete("deleteShopDiary/{id}")]
+        public async Task<IActionResult> Delete(int id) =>
+            Ok(await shopDiaryService.Delete(id));
     }
 }

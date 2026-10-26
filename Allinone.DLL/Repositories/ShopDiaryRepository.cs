@@ -7,60 +7,47 @@ namespace Allinone.DLL.Repositories
 {
     public interface IShopDiaryRepository
     {
-        Task<IEnumerable<ShopDiary>> GetAllByMemberAsync(int memberid);
-        Task<IEnumerable<ShopDiary>> GetAllByMemberAsync(int memberid, int shopId);
-        Task<ShopDiary> GetByMemberAndDiaryIdAsync(int memberid, int shopDiaryId);
-        Task<ShopDiary>? GetAsync(int id);
-        Task<IEnumerable<ShopDiary>> GetAllAsync();
-        Task Add(ShopDiary entity);
-        void Update(ShopDiary entity);
-        void Delete(ShopDiary entity);
+        Task<IEnumerable<ShopDiary>> GetAllByMemberAsync(int memberId, int? shopId = null);
+        Task<ShopDiary?> GetByMemberAndDiaryIdAsync(int memberId, int shopDiaryId);
+        Task AddAsync(ShopDiary entity);
+        Task UpdateAsync(ShopDiary entity);
+        Task DeleteAsync(ShopDiary entity);
     }
 
     public class ShopDiaryRepository(DSContext context) : IShopDiaryRepository
     {
-        public async Task<IEnumerable<ShopDiary>> GetAllByMemberAsync(int memberid) =>
-            await context.Shop
-                .Where(x => x.MemberID == memberid)
-                .SelectMany(x => x.ShopDiarys)
-                .Include(x => x.Shop)
+        public async Task<IEnumerable<ShopDiary>> GetAllByMemberAsync(int memberId, int? shopId = null) =>
+            await MemberDiaries(memberId)
+                .Where(x => shopId == null || x.ShopID == shopId)
+                .OrderByDescending(x => x.Date)
+                .AsNoTracking()
                 .ToListAsync();
 
-        public async Task<IEnumerable<ShopDiary>> GetAllByMemberAsync(int memberid, int shopId) =>
-            await context.Shop
-                .Where(x => x.MemberID == memberid && x.ID == shopId)
-                .SelectMany(x => x.ShopDiarys)
-                .Include(x => x.Shop)
-                .ToListAsync();
+        public async Task<ShopDiary?> GetByMemberAndDiaryIdAsync(int memberId, int shopDiaryId) =>
+            await MemberDiaries(memberId).FirstOrDefaultAsync(x => x.ID == shopDiaryId);
 
-        public async Task<ShopDiary> GetByMemberAndDiaryIdAsync(int memberid, int shopDiaryId) =>
-            await context.Shop
-                .Where(x => x.MemberID == memberid)
-                .SelectMany(x => x.ShopDiarys)
-                .FirstOrDefaultAsync(diary => diary.ID == shopDiaryId);
-
-        public async Task<ShopDiary>? GetAsync(int id) =>
-            await context.ShopDiary.FindAsync(id);
-
-        public async Task<IEnumerable<ShopDiary>> GetAllAsync() =>
-            await context.ShopDiary.ToListAsync();
-
-        public async Task Add(ShopDiary entity)
+        public async Task AddAsync(ShopDiary entity)
         {
             await context.ShopDiary.AddAsync(entity);
             await context.SaveChangesAsync();
         }
 
-        public void Update(ShopDiary entity)
+        public async Task UpdateAsync(ShopDiary entity)
         {
             context.ShopDiary.Update(entity);
-            context.SaveChanges();
+            await context.SaveChangesAsync();
         }
 
-        public void Delete(ShopDiary entity)
+        public async Task DeleteAsync(ShopDiary entity)
         {
             context.ShopDiary.Remove(entity);
-            context.SaveChanges();
+            await context.SaveChangesAsync();
         }
+
+        // Diaries are owned through their shop, so ownership is enforced via Shop.MemberID.
+        private IQueryable<ShopDiary> MemberDiaries(int memberId) =>
+            context.ShopDiary
+                .Include(x => x.Shop)
+                .Where(x => x.Shop.MemberID == memberId);
     }
 }

@@ -156,7 +156,7 @@ namespace Allinone.Tests.Services
             var auditlogRepository = new AuditlogRepository(context);
             var auditlogService = new AuditlogService(auditlogRepository, mapModel);
 
-            _shopDiaryService = new ShopDiaryService(auditlogService, shopRepository, shopTypeRepository, shopDiaryRepository, mapModel);
+            _shopDiaryService = new ShopDiaryService(auditlogService, shopRepository, shopDiaryRepository, mapModel);
         }
 
         [Fact]
@@ -174,16 +174,6 @@ namespace Allinone.Tests.Services
         {
             // Act
             var result = await _shopDiaryService.GetShopDiaries();
-
-            // Assert
-            Assert.NotNull(result);
-        }
-
-        [Fact]
-        public async Task GetAllByMemberAsync_Returns_Success()
-        {
-            // Act
-            var result = await _shopDiaryService.GetAllByMemberAsync();
 
             // Assert
             Assert.NotNull(result);
