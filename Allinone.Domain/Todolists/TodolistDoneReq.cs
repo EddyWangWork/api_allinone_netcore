@@ -10,14 +10,10 @@ namespace Allinone.Domain.Todolists
 
     public class TodolistDoneUpdateReq
     {
-        private static double _unixUpdateTime;
-        public double UnixUpdateTime
-        {
-            get => _unixUpdateTime;
-            set => _unixUpdateTime = value != 0 ? value : (DateTime.UtcNow.AddHours(8) - DateTime.UnixEpoch).TotalSeconds;
-        }
+        public double UnixUpdateTime { get; set; }
 
-        public DateTime UpdateDate => DateTimeHelper.UnixToDateTimeMSec(_unixUpdateTime);
+        // 0 falls back to the current time (UTC+8) inside the helper
+        public DateTime UpdateDate => DateTimeHelper.UnixToDateTimeMSec(UnixUpdateTime);
 
         public string? Remark { get; set; }
     }

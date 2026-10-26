@@ -22,55 +22,52 @@ namespace Allinone.BLL.Todolists
         ITodolistDoneRepository todolistDoneRepository,
         IMapModel mapper) : BaseBLL, ITodolistDoneService
     {
-        public async Task<List<TodolistDoneDto>> GetAsync()
-        {
-            if (MemberId == 0) throw new MemberNotFoundException();
+        public async Task<List<TodolistDoneDto>> GetAsync() =>
+            await todolistDoneRepository.GetAllAsync(RequireMemberId());
 
-            return await todolistDoneRepository.GetAllAsync(MemberId);
-        }
-
-        public async Task<TodolistDone> GetByIdAsync(int id)
-        {
-            return await todolistDoneRepository.GetByIdAsync(id) ?? throw new TodolistDoneNotFoundException();
-        }
+        public async Task<TodolistDone> GetByIdAsync(int id) =>
+            await FindOwnedAsync(id, RequireMemberId());
 
         public async Task<TodolistDone> Add(TodolistDoneAddReq req)
         {
-            if (MemberId == 0) throw new MemberNotFoundException();
+            var memberId = RequireMemberId();
 
             var entity = mapper.MapDto<TodolistDoneAddReq, TodolistDone>(req);
+            var result = await todolistDoneRepository.AddAsync(entity, memberId);
 
-            var result = await todolistDoneRepository.Add(entity);
             await _auditlogService.LogTodolistDoneNew(
-                entity.Todolist.Name, MemberId, JsonConvert.SerializeObject(entity));
+                result.Todolist.Name, memberId, JsonConvert.SerializeObject(result));
             return result;
         }
 
         public async Task<TodolistDone> Update(int id, TodolistDoneUpdateReq req)
         {
-            if (MemberId == 0) throw new MemberNotFoundException();
-
-            var entity = await todolistDoneRepository.GetByIdAsync(id) ?? throw new TodolistDoneNotFoundException();
+            var memberId = RequireMemberId();
+            var entity = await FindOwnedAsync(id, memberId);
 
             mapper.Map(req, entity);
-
-            todolistDoneRepository.Update(entity);
+            await todolistDoneRepository.UpdateAsync(entity);
 
             await _auditlogService.LogTodolistDoneUpdate(
-                entity.Todolist.Name, MemberId, JsonConvert.SerializeObject(entity), JsonConvert.SerializeObject(req));
+                entity.Todolist.Name, memberId, JsonConvert.SerializeObject(entity), JsonConvert.SerializeObject(req));
             return entity;
         }
 
         public async Task<TodolistDone> Delete(int id)
         {
-            if (MemberId == 0) throw new MemberNotFoundException();
+            var memberId = RequireMemberId();
+            var entity = await FindOwnedAsync(id, memberId);
 
-            var entity = await todolistDoneRepository.GetByIdAsync(id) ?? throw new TodolistDoneNotFoundException();
-
-            todolistDoneRepository.Delete(entity);
+            await todolistDoneRepository.DeleteAsync(entity);
             await _auditlogService.LogTodolistDoneDelete(
-                entity.Todolist.Name, MemberId, JsonConvert.SerializeObject(entity));
+                entity.Todolist.Name, memberId, JsonConvert.SerializeObject(entity));
             return entity;
         }
+
+        private static int RequireMemberId() =>
+            MemberId == 0 ? throw new MemberNotFoundException() : MemberId;
+
+        private async Task<TodolistDone> FindOwnedAsync(int id, int memberId) =>
+            await todolistDoneRepository.GetByIdAsync(id, memberId) ?? throw new TodolistDoneNotFoundException();
     }
 }
