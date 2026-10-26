@@ -9,8 +9,8 @@ namespace Allinone.BLL.Todolists
 {
     public interface ITodolistService
     {
-        IEnumerable<TodolistDto> GetTodolistsUndone();
-        IEnumerable<TodolistDto> GetTodolistsUndone(DateTime date);
+        Task<IEnumerable<TodolistDto>> GetTodolistsUndone();
+        Task<IEnumerable<TodolistDto>> GetTodolistsUndone(DateTime date);
         Task<Todolist> Get(int id);
         Task<Todolist> Add(TodolistAddReq req);
         Task<Todolist> Update(int id, TodolistAddReq req);

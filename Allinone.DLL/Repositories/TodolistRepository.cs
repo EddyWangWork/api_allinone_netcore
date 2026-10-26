@@ -1,4 +1,4 @@
-﻿using Allinone.DLL.Data;
+using Allinone.DLL.Data;
 using Allinone.Domain.Enums;
 using Allinone.Domain.Todolists;
 using Microsoft.EntityFrameworkCore;
@@ -7,78 +7,67 @@ namespace Allinone.DLL.Repositories
 {
     public interface ITodolistRepository
     {
-        IEnumerable<TodolistDto> GetTodolistsUndone(int memberId);
-        IEnumerable<TodolistDto> GetTodolistsUndone(int memberId, DateTime date);
-        Task<bool>? IsExist(int id);
-        Task<Todolist>? GetAsync(int id);
-        Task<IEnumerable<Todolist>> GetAllAsync();
+        Task<List<TodolistDto>> GetTodolistsUndoneAsync(int memberId, DateTime date);
+        Task<bool> IsExist(int id, int memberId);
+        Task<Todolist?> GetAsync(int id, int memberId);
+        Task<List<Todolist>> GetAllAsync(int memberId);
         Task Add(Todolist todolist);
-        void Update(Todolist todolist);
-        void Delete(Todolist todolist);
+        Task Update(Todolist todolist);
+        Task Delete(Todolist todolist);
     }
 
     public class TodolistRepository(DSContext context) : ITodolistRepository
     {
-        public IEnumerable<TodolistDto> GetTodolistsUndone(int memberId) =>
-            GetTodolistsUndone(memberId, DateTime.Now);
-
-        public IEnumerable<TodolistDto> GetTodolistsUndone(int memberId, DateTime date)
+        public async Task<List<TodolistDto>> GetTodolistsUndoneAsync(int memberId, DateTime date)
         {
-            var todolists = new List<TodolistDto>();
+            var todolists = await context.Todolist
+                .AsNoTracking()
+                .Where(x => x.MemberID == memberId)
+                .ToListAsync();
 
-            var responses = (
-                 from a in context.Todolist
-                 join b in context.TodolistDone on a.ID equals b.TodolistID into bb
-                 from b2 in bb.DefaultIfEmpty()
-                 where
-                    a.MemberID == memberId
-                 select new
-                 {
-                     ID = a.ID,
-                     Name = a.Name,
-                     CategoryID = a.CategoryID,
-                     Description = a.Description ?? string.Empty,
-                     UpdateDate = a.UpdateDate,
-                     DoneDate = b2.UpdateDate != null ? b2.UpdateDate : DateTime.MinValue,
-                     TodolistDoneID = b2.ID != null ? b2.ID : 0
-                 }).AsEnumerable();
+            var dones = await context.TodolistDone
+                .AsNoTracking()
+                .Where(x => x.Todolist.MemberID == memberId)
+                .Select(x => new { x.TodolistID, x.UpdateDate })
+                .ToListAsync();
 
-            var todolistsTemp = responses;
+            var donesByTodolist = dones.ToLookup(x => x.TodolistID, x => x.UpdateDate);
 
-            var todolistsG = todolistsTemp.GroupBy(x => x.Name);
+            var result = new List<TodolistDto>();
 
-            foreach (var todolistG in todolistsG)
+            // Todolists sharing a name are treated as one logical item
+            foreach (var group in todolists.GroupBy(x => x.Name))
             {
-                if ((todolistG.Any(x => x.CategoryID == (int)EnumTodolistType.Monthly
-                        && x.DoneDate.Year == date.Year
-                        && x.DoneDate.Month == date.Month)) ||
-                    todolistG.Any(x => x.CategoryID == (int)EnumTodolistType.Normal
-                        && x.TodolistDoneID > 0))
-                    continue;
+                var isDone = group.Any(t =>
+                    (t.CategoryID == (int)EnumTodolistType.Monthly
+                        && donesByTodolist[t.ID].Any(d => d.Year == date.Year && d.Month == date.Month))
+                    || (t.CategoryID == (int)EnumTodolistType.Normal
+                        && donesByTodolist[t.ID].Any()));
 
-                var todolist = todolistG.FirstOrDefault();
+                if (isDone) continue;
 
-                todolists.Add(new TodolistDto
+                var first = group.First();
+                result.Add(new TodolistDto
                 {
-                    ID = todolist.ID,
-                    Name = todolist.Name,
-                    CategoryID = todolist.CategoryID,
-                    Description = todolist.Description,
-                    UpdateDate = todolist.UpdateDate
+                    ID = first.ID,
+                    Name = first.Name,
+                    CategoryID = first.CategoryID,
+                    Description = first.Description ?? string.Empty,
+                    UpdateDate = first.UpdateDate
                 });
             }
 
-            return todolists;
+            return result;
         }
 
-        public async Task<bool>? IsExist(int id) =>
-            await context.Todolist.AnyAsync(x => x.ID == id);
+        public Task<bool> IsExist(int id, int memberId) =>
+            context.Todolist.AnyAsync(x => x.ID == id && x.MemberID == memberId);
 
-        public async Task<Todolist>? GetAsync(int id) =>
-            await context.Todolist.FindAsync(id);
+        public Task<Todolist?> GetAsync(int id, int memberId) =>
+            context.Todolist.FirstOrDefaultAsync(x => x.ID == id && x.MemberID == memberId);
 
-        public async Task<IEnumerable<Todolist>> GetAllAsync() =>
-            await context.Todolist.ToListAsync();
+        public Task<List<Todolist>> GetAllAsync(int memberId) =>
+            context.Todolist.Where(x => x.MemberID == memberId).ToListAsync();
 
         public async Task Add(Todolist todolist)
         {
@@ -86,16 +75,17 @@ namespace Allinone.DLL.Repositories
             await context.SaveChangesAsync();
         }
 
-        public void Update(Todolist todolist)
+        public async Task Update(Todolist todolist)
         {
             context.Todolist.Update(todolist);
-            context.SaveChanges();
+            await context.SaveChangesAsync();
         }
 
-        public void Delete(Todolist todolist)
+        public async Task Delete(Todolist todolist)
         {
             context.Todolist.Remove(todolist);
-            context.SaveChanges();
+            await context.SaveChangesAsync();
         }
     }
 }
+

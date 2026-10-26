@@ -72,7 +72,7 @@ namespace Allinone.Tests.Services
         public async Task GetUndone_Returns_Success()
         {
             // Act
-            var result = _todolistService.GetTodolistsUndone();
+            var result = await _todolistService.GetTodolistsUndone();
 
             // Assert
             Assert.NotNull(result);
@@ -87,7 +87,7 @@ namespace Allinone.Tests.Services
             BaseBLL.MemberId = 2;
 
             // Act
-            var result = _todolistService.GetTodolistsUndone();
+            var result = await _todolistService.GetTodolistsUndone();
 
             // Assert
             Assert.Equal(0, result!.Count());
