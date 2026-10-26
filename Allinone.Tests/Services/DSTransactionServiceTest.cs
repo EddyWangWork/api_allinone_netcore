@@ -186,6 +186,22 @@ namespace Allinone.Tests.Services
         }
 
         [Fact]
+        public async Task GetDSMonthlyCommitmentAndOtherAsync_DoesNotMutateRequestWhenDebitIdsAreNull()
+        {
+            var req = new GetDSMonthlyCommitmentAndOtherReq
+            {
+                Year = 2001,
+                Month = 1,
+                DebitIds = null
+            };
+
+            var result = await _dsTransactionService.GetDSMonthlyCommitmentAndOtherAsync(req);
+
+            Assert.NotNull(result);
+            Assert.Null(req.DebitIds);
+        }
+
+        [Fact]
         public async Task GetDSMonthlyPeriodCreditDebitAsync_Returns_Success()
         {
             // Assign
@@ -208,6 +224,29 @@ namespace Allinone.Tests.Services
         }
 
         [Fact]
+        public async Task GetDSMonthlyPeriodCreditDebitAsync_IncludesMonthsWithoutTransactions()
+        {
+            var req = new GetDSMonthlyPeriodCreditDebitReq
+            {
+                Year = 2001,
+                Month = 3,
+                MonthDuration = 3
+            };
+
+            var result = (await _dsTransactionService.GetDSMonthlyPeriodCreditDebitAsync(req)).ToList();
+
+            Assert.Equal(
+                [new DateTime(2001, 3, 1), new DateTime(2001, 2, 1), new DateTime(2001, 1, 1)],
+                result.Select(x => x.YearMonthDatetime));
+            Assert.All(result, month =>
+            {
+                Assert.Equal(0, month.Credit);
+                Assert.Equal(0, month.Debit);
+                Assert.Equal(0, month.Remain);
+            });
+        }
+
+        [Fact]
         public async Task GetDSMonthlyItemExpensesAsync_Returns_Success()
         {
             // Act
@@ -215,6 +254,21 @@ namespace Allinone.Tests.Services
 
             // Assert
             Assert.NotNull(result);
+        }
+
+        [Fact]
+        public async Task GetDSMonthlyItemExpensesAsync_ReturnsConsecutiveMonthComparisonsWithoutTransactions()
+        {
+            var result = (await _dsTransactionService.GetDSMonthlyItemExpensesAsync(2001, 3, 3)).ToList();
+
+            Assert.Equal(
+                [new DateTime(2001, 3, 1), new DateTime(2001, 2, 1)],
+                result.Select(x => x.YearMonthDatetime));
+            Assert.All(result, month =>
+            {
+                Assert.Empty(month.DSMonthlyItems);
+                Assert.Empty(month.DSMonthlySubItems);
+            });
         }
 
         [Fact]
