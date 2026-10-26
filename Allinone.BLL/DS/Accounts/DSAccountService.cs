@@ -41,60 +41,52 @@ namespace Allinone.BLL.DS.Accounts
 
         public async Task<List<DSAccountDto>> GetDSAccountsWithBalance()
         {
-            var dsAccounts = new List<DSAccountDto>();
-            var dsAccountsOrdered = new List<DSAccountDto>();
-
             var dsAccountList = await dsAccountRepository.GetAllByMemberAsync(MemberId);
             var dsTransList = await dsTransactionService.GetAllByMemberIdCacheAsync();
 
-            foreach (var dsAccount in dsAccountList)
-            {
-                var dsAccountDto = new DSAccountDto
+            var transByAccount = dsTransList.ToLookup(x => x.DSAccountID);
+
+            return dsAccountList
+                .Select(dsAccount =>
                 {
-                    ID = dsAccount.ID,
-                    Name = dsAccount.Name,
-                    IsActive = dsAccount.IsActive
-                };
+                    var dto = new DSAccountDto
+                    {
+                        ID = dsAccount.ID,
+                        Name = dsAccount.Name,
+                        IsActive = dsAccount.IsActive
+                    };
 
-                var dsAccountSelected = dsTransList.Where(x => x.DSAccountID == dsAccount.ID);
+                    var trans = transByAccount[dsAccount.ID].ToList();
+                    if (trans.Count == 0) return dto;
 
-                if (!dsAccountSelected.Any())
-                {
-                    dsAccounts.Add(dsAccountDto);
-                    continue;
-                }
+                    dto.Balance = trans.Where(x => incomeList.Contains(x.DSTypeID)).Sum(x => x.Amount)
+                        - trans.Where(x => expensesList.Contains(x.DSTypeID)).Sum(x => x.Amount);
+                    dto.CreatedDateTime = trans.Max(x => x.CreatedDateTime);
 
-                var incomes = dsAccountSelected.Where(x => incomeList.Contains(x.DSTypeID)).Sum(x => x.Amount);
-                var expenses = dsAccountSelected.Where(x => expensesList.Contains(x.DSTypeID)).Sum(x => x.Amount);
-                var LatestCreatedDateTime = dsAccountSelected.OrderByDescending(x => x.CreatedDateTime).FirstOrDefault().CreatedDateTime;
-
-                dsAccountDto.Balance = incomes - expenses;
-                dsAccountDto.CreatedDateTime = LatestCreatedDateTime;
-
-                dsAccounts.Add(dsAccountDto);
-            }
-
-            dsAccountsOrdered.AddRange(dsAccounts.Where(x => x.IsActive == true).OrderByDescending(x => x.Balance));
-            dsAccountsOrdered.AddRange(dsAccounts.Where(x => x.IsActive != true).OrderByDescending(x => x.Balance));
-
-            return dsAccountsOrdered;
+                    return dto;
+                })
+                .OrderByDescending(x => x.IsActive)
+                .ThenByDescending(x => x.Balance)
+                .ToList();
         }
 
         public async Task<IEnumerable<DSAccount>> Get()
         {
-            if (MemberId == 0) throw new MemberNotFoundException();
+            EnsureMember();
 
             return await dsAccountRepository.GetAllByMemberAsync(MemberId);
         }
 
         public async Task<DSAccount> Get(int id)
         {
-            return await dsAccountRepository.GetAsync(id) ?? throw new DSAccountNotFoundException();
+            EnsureMember();
+
+            return await dsAccountRepository.GetByMemberAsync(MemberId, id) ?? throw new DSAccountNotFoundException();
         }
 
         public async Task<DSAccount> Add(DSAccountAddReq req)
         {
-            if (MemberId == 0) throw new MemberNotFoundException();
+            EnsureMember();
 
             var entity = mapper.MapDto<DSAccountAddReq, DSAccount>(req);
             entity = ServiceHelper.SetAuditAddMemberFields(entity, MemberId);
@@ -106,9 +98,7 @@ namespace Allinone.BLL.DS.Accounts
 
         public async Task<DSAccount> Update(int id, DSAccountAddReq req)
         {
-            if (MemberId == 0) throw new MemberNotFoundException();
-
-            var entity = await dsAccountRepository.GetAsync(id) ?? throw new DSAccountNotFoundException();
+            var entity = await Get(id);
 
             mapper.Map(req, entity);
 
@@ -119,13 +109,16 @@ namespace Allinone.BLL.DS.Accounts
 
         public async Task<DSAccount> Delete(int id)
         {
-            if (MemberId == 0) throw new MemberNotFoundException();
-
-            var entity = await dsAccountRepository.GetAsync(id) ?? throw new DSAccountNotFoundException();
+            var entity = await Get(id);
 
             dsAccountRepository.Delete(entity);
 
             return entity;
+        }
+
+        private static void EnsureMember()
+        {
+            if (MemberId == 0) throw new MemberNotFoundException();
         }
     }
 }

@@ -1,8 +1,11 @@
-﻿namespace Allinone.Domain.DS.Accounts
+using System.ComponentModel.DataAnnotations;
+
+namespace Allinone.Domain.DS.Accounts
 {
     public class DSAccountAddReq
     {
-        public string Name { get; set; }
+        [Required, StringLength(100)]
+        public string Name { get; set; } = string.Empty;
         public bool IsActive { get; set; }
     }
 

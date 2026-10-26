@@ -17,32 +17,23 @@ namespace Allinone.API.Controllers
             return Ok(response);
         }
 
-        [HttpGet("{id}")]
-        public async Task<IActionResult> Get(int id)
-        {
-            var response = await dsAccountService.Get(id);
-            return Ok(response);
-        }
+        [HttpGet("{id:int}")]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> Get(int id) =>
+            Ok(await dsAccountService.Get(id));
 
         [HttpPost]
-        public async Task<IActionResult> Add(DSAccountAddReq req)
-        {
-            var response = await dsAccountService.Add(req);
-            return Ok(response);
-        }
+        public async Task<IActionResult> Add(DSAccountAddReq req) =>
+            Ok(await dsAccountService.Add(req));
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, DSAccountAddReq req)
-        {
-            var response = await dsAccountService.Update(id, req);
-            return Ok(response);
-        }
+        [HttpPut("{id:int}")]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> Update(int id, DSAccountAddReq req) =>
+            Ok(await dsAccountService.Update(id, req));
 
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
-        {
-            var response = await dsAccountService.Delete(id);
-            return Ok(response);
-        }
+        [HttpDelete("{id:int}")]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> Delete(int id) =>
+            Ok(await dsAccountService.Delete(id));
     }
 }

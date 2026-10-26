@@ -8,7 +8,8 @@ namespace Allinone.DLL.Repositories
     {
         Task<bool> IsExist(string name);
         Task<bool> IsExistByMember(int memberid, int dsAccount);
-        Task<DSAccount>? GetAsync(int id);
+        Task<DSAccount?> GetAsync(int id);
+        Task<DSAccount?> GetByMemberAsync(int memberid, int id);
         Task<IEnumerable<DSAccount>> GetAllByMemberAsync(int memberid);
         Task<IEnumerable<DSAccount>> GetAllAsync();
         Task Add(DSAccount entity);
@@ -24,14 +25,17 @@ namespace Allinone.DLL.Repositories
         public async Task<bool> IsExistByMember(int memberid, int id) =>
           await context.DSAccount.AnyAsync(x => x.MemberID == memberid && x.ID == id);
 
-        public async Task<DSAccount> GetAsync(int id) =>
+        public async Task<DSAccount?> GetAsync(int id) =>
             await context.DSAccount.FindAsync(id);
 
+        public async Task<DSAccount?> GetByMemberAsync(int memberid, int id) =>
+            await context.DSAccount.FirstOrDefaultAsync(x => x.MemberID == memberid && x.ID == id);
+
         public async Task<IEnumerable<DSAccount>> GetAllByMemberAsync(int memberid) =>
-            await context.DSAccount.Where(x => x.MemberID == memberid).ToListAsync();
+            await context.DSAccount.AsNoTracking().Where(x => x.MemberID == memberid).ToListAsync();
 
         public async Task<IEnumerable<DSAccount>> GetAllAsync() =>
-            await context.DSAccount.ToListAsync();
+            await context.DSAccount.AsNoTracking().ToListAsync();
 
         public async Task Add(DSAccount entity)
         {
