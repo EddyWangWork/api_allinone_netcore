@@ -65,6 +65,7 @@ namespace Allinone.API.Filters
                 case ShopBadRequestException:
                 case TripBadRequestException:
                 case TripDetailTypeBadRequestException:
+                case TripDetailBadRequestException:
                 case DiaryBadRequestException:
                 case DiaryDateDuplicatedException:
                     {

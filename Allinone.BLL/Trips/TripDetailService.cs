@@ -8,6 +8,7 @@ namespace Allinone.BLL.Trips
     public interface ITripDetailService
     {
         Task<IEnumerable<TripDetail>> GetAllAsync();
+        Task<IEnumerable<TripDetail>> GetByTripIdAsync(int tripId);
         Task<TripDetail> Get(int id);
         Task<TripDetail> Add(TripDetailAddReq req);
         Task<TripDetail> Update(int id, TripDetailAddReq req);
@@ -25,16 +26,31 @@ namespace Allinone.BLL.Trips
             return await tripDetailRepository.GetAllAsync();
         }
 
+        public async Task<IEnumerable<TripDetail>> GetByTripIdAsync(int tripId)
+        {
+            if (!await tripRepository.IsExist(tripId)) throw new TripBadRequestException();
+
+            return await tripDetailRepository.GetByTripIdAsync(tripId);
+        }
+
         public async Task<TripDetail> Get(int id)
         {
             return await tripDetailRepository.GetAsync(id) ?? throw new TripDetailNotFoundException();
         }
 
-        public async Task<TripDetail> Add(TripDetailAddReq req)
+        private async Task ValidateAsync(TripDetailAddReq req)
         {
             if (MemberId == 0) throw new MemberNotFoundException();
-            if (!await tripRepository.IsExist(req.TripID)) throw new TripBadRequestException();
+            var trip = await tripRepository.GetAsync(req.TripID) ?? throw new TripBadRequestException();
             if (!await tripDetailTypeRepository.IsExist(req.TripDetailTypeID)) throw new TripDetailTypeBadRequestException();
+
+            if (req.Date.Date < trip.FromDate.Date || req.Date.Date > trip.ToDate.Date)
+                throw new TripDetailBadRequestException();
+        }
+
+        public async Task<TripDetail> Add(TripDetailAddReq req)
+        {
+            await ValidateAsync(req);
 
             var entity = mapper.MapDto<TripDetailAddReq, TripDetail>(req);
 
@@ -45,9 +61,7 @@ namespace Allinone.BLL.Trips
 
         public async Task<TripDetail> Update(int id, TripDetailAddReq req)
         {
-            if (MemberId == 0) throw new MemberNotFoundException();
-            if (!await tripRepository.IsExist(req.TripID)) throw new TripBadRequestException();
-            if (!await tripDetailTypeRepository.IsExist(req.TripDetailTypeID)) throw new TripDetailTypeBadRequestException();
+            await ValidateAsync(req);
 
             var entity = await tripDetailRepository.GetAsync(id) ?? throw new TripDetailNotFoundException();
 

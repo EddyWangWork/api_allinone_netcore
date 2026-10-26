@@ -75,6 +75,7 @@
 
     //TripDetail
     public class TripDetailNotFoundException(string message = "Trip Detail not found") : Exception(message) { }
+    public class TripDetailBadRequestException(string message = "Trip Detail date must be within the trip dates") : Exception(message) { }
 
 
     //Installment

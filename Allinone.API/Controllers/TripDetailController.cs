@@ -11,32 +11,17 @@ namespace Allinone.API.Controllers
     public class TripDetailController(ITripDetailService tripDetailService) : ControllerBase
     {
         [HttpGet]
-        [Route("GetTripDetails")]
+        [HttpGet("GetTripDetails")]
         public async Task<IActionResult> GetTripDetailsAsync()
         {
             var response = await tripDetailService.GetAllAsync();
             return Ok(response);
         }
 
-        [HttpPost]
-        [Route("addTripDetail")]
-        public async Task<IActionResult> AddTripDetail(TripDetailAddReq req)
+        [HttpGet("trip/{tripId}")]
+        public async Task<IActionResult> GetByTripId(int tripId)
         {
-            var response = await tripDetailService.Add(req);
-            return Ok(response);
-        }
-
-        [HttpPut("updateTripDetail/{id}")]
-        public async Task<IActionResult> UpdateTripDetail(int id, TripDetailAddReq req)
-        {
-            var response = await tripDetailService.Update(id, req);
-            return Ok(response);
-        }
-
-        [HttpDelete("deleteTripDetail/{id}")]
-        public async Task<IActionResult> DeleteTripDetail(int id)
-        {
-            var response = await tripDetailService.Delete(id);
+            var response = await tripDetailService.GetByTripIdAsync(tripId);
             return Ok(response);
         }
 
@@ -48,6 +33,7 @@ namespace Allinone.API.Controllers
         }
 
         [HttpPost]
+        [HttpPost("addTripDetail")]
         public async Task<IActionResult> Add(TripDetailAddReq req)
         {
             var response = await tripDetailService.Add(req);
@@ -55,6 +41,7 @@ namespace Allinone.API.Controllers
         }
 
         [HttpPut("{id}")]
+        [HttpPut("updateTripDetail/{id}")]
         public async Task<IActionResult> Update(int id, TripDetailAddReq req)
         {
             var response = await tripDetailService.Update(id, req);
@@ -62,6 +49,7 @@ namespace Allinone.API.Controllers
         }
 
         [HttpDelete("{id}")]
+        [HttpDelete("deleteTripDetail/{id}")]
         public async Task<IActionResult> Delete(int id)
         {
             var response = await tripDetailService.Delete(id);
