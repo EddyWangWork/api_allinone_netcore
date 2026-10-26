@@ -48,63 +48,47 @@ namespace Allinone.API.Controllers
         }
 
 
-        [HttpPost]
-        [Route("getDSTransactionV2")]
-        public async Task<IActionResult> GetDSTransactionsAsync(DSTransactionWithDateReq req)
-        {
-            var response = await dsTransactionService.GetDSTransactionAsyncV3(req);
-            return Ok(response);
-        }
-
+        [HttpPost("getDSTransactionV2")]
         [HttpPost("getDSTransactionWithDate")]
         public async Task<IActionResult> GetDSTransactionWithDateAsync(DSTransactionWithDateReq req)
         {
             return Ok(await dsTransactionService.GetDSTransactionAsyncV3(req));
         }
 
-        [HttpPost]
-        [Route("getDSTransactionsByDSAccount")]
+        [HttpPost("getDSTransactionsByDSAccount")]
         public async Task<IActionResult> GetDSTransactionsByDSAccountAsync(GetDSTransactionAsyncV2Req req)
         {
-            var response = await dsTransactionService.GetDSTransactionByDSAccountAsync(req);
-            return Ok(response);
+            return Ok(await dsTransactionService.GetDSTransactionByDSAccountAsync(req));
         }
 
-        [HttpGet]
-        [Route("getAllByMemberId")]
+        [HttpGet("getAllByMemberId")]
         public async Task<IActionResult> GetAllByMemberIdAsync()
         {
-            var response = await dsTransactionService.GetAllByMemberIdAsync();
-            return Ok(response);
+            return Ok(await dsTransactionService.GetAllByMemberIdAsync());
         }
-
 
         [HttpGet("{id}")]
         public async Task<IActionResult> Get(int id)
         {
-            var response = await dsTransactionService.Get(id);
-            return Ok(response);
+            return Ok(await dsTransactionService.Get(id));
         }
 
         [HttpPost]
         public async Task<IActionResult> Add(DSTransactionReq req)
         {
-            var response = await dsTransactionService.Add(req);
-            return Ok(response);
+            return Ok(await dsTransactionService.Add(req));
         }
 
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, DSTransactionReq req)
         {
-            var response = await dsTransactionService.Update(id, req);
-            return Ok(response);
+            return Ok(await dsTransactionService.Update(id, req));
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var response = await dsTransactionService.Delete(id);
-            return Ok(response);
+            return Ok(await dsTransactionService.Delete(id));
         }
     }
 }

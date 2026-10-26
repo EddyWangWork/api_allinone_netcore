@@ -7,12 +7,10 @@ namespace Allinone.DLL.Repositories
 {
     public interface IDSTransactionRepository
     {
-        Task<DSYearExpenses> GetDSYearExpensesAsync(int year);
-        Task<IEnumerable<DSYearCreditDebitDiff>> GetDSYearCreditDebitDiffAsync(int year);
-        Task<IEnumerable<DSDebitStat>> GetDSMonthlyExpensesAsync(int year, int month);
+        Task<DSYearExpenses> GetDSYearExpensesAsync(int year, int memberId);
+        Task<IEnumerable<DSYearCreditDebitDiff>> GetDSYearCreditDebitDiffAsync(int year, int memberId);
+        Task<IEnumerable<DSDebitStat>> GetDSMonthlyExpensesAsync(int year, int month, int memberId);
 
-        Task<IEnumerable<DSTransactionDtoV2>> GetDSTransactionAsyncV3(int memberId);
-        Task<IEnumerable<DSTransactionDtoV2>> GetDSTransactionByDSAccountAsync(int dsAccountID, int memberId);
         Task<IEnumerable<DSTransactionDto>> GetAllByMemberIdAsync(int memberId);
         Task<DSTransaction>? GetByTransferOutIdAsync(int id);
         Task<DSTransaction>? GetAsync(int id);
@@ -27,9 +25,8 @@ namespace Allinone.DLL.Repositories
     {
         private static readonly List<int> _transferTypes = [3, 4];
         private static readonly List<int> _creditItems = [19];
-        private static readonly List<int> _debitItems = [2, 3, 31]; //commitment:1
 
-        public async Task<DSYearExpenses> GetDSYearExpensesAsync(int year)
+        public async Task<DSYearExpenses> GetDSYearExpensesAsync(int year, int memberId)
         {
             var responses = (
                  from a in context.DSTransaction
@@ -40,6 +37,7 @@ namespace Allinone.DLL.Repositories
                  join d in context.DSItem on c2.DSItemID equals d.ID into dd
                  from d2 in dd.DefaultIfEmpty()
                  where
+                    a.MemberID == memberId &&
                     a.DSTypeID == (int)EnumDSTranType.Expense &&
                     (a.CreatedDateTime.Year == year)
                  select new
@@ -78,7 +76,7 @@ namespace Allinone.DLL.Repositories
             }
             return dsYearExpenses;
         }
-        public async Task<IEnumerable<DSYearCreditDebitDiff>> GetDSYearCreditDebitDiffAsync(int year)
+        public async Task<IEnumerable<DSYearCreditDebitDiff>>         GetDSYearCreditDebitDiffAsync(int year, int memberId)
         {
             List<int> CreditDebitList = new List<int> { (int)EnumDSTranType.Income, (int)EnumDSTranType.Expense };
 
@@ -91,6 +89,7 @@ namespace Allinone.DLL.Repositories
                  join d in context.DSItem on c2.DSItemID equals d.ID into dd
                  from d2 in dd.DefaultIfEmpty()
                  where
+                    a.MemberID == memberId &&
                     (a.DSTypeID == (int)EnumDSTranType.Expense ||
                     (a.DSTypeID == (int)EnumDSTranType.Income && _creditItems.Contains(b2 != null ? b2.ID : c2.DSItemID))) &&
                     (a.CreatedDateTime.Year == year)
@@ -129,7 +128,7 @@ namespace Allinone.DLL.Repositories
             }
             return dsYearCreditDebitDiff;
         }
-        public async Task<IEnumerable<DSDebitStat>> GetDSMonthlyExpensesAsync(int year, int month)
+        public async Task<IEnumerable<DSDebitStat>>         GetDSMonthlyExpensesAsync(int year, int month, int memberId)
         {
             var responses = (
                  from a in context.DSTransaction
@@ -140,6 +139,7 @@ namespace Allinone.DLL.Repositories
                  join d in context.DSItem on c2.DSItemID equals d.ID into dd
                  from d2 in dd.DefaultIfEmpty()
                  where
+                    a.MemberID == memberId &&
                     a.DSTypeID == (int)EnumDSTranType.Expense &&
                     (a.CreatedDateTime.Year == year && a.CreatedDateTime.Month == month)
                  select new DSDebitStat
@@ -151,103 +151,6 @@ namespace Allinone.DLL.Repositories
             var res = await responses;
             res = res.GroupBy(x => x.DSItemName).Select(y => new DSDebitStat { DSItemName = y.First().DSItemName, Amount = y.Sum(x => x.Amount) }).ToList();
             return res.OrderByDescending(x => x.Amount);
-        }
-
-        public async Task<IEnumerable<DSTransactionDtoV2>> GetDSTransactionAsyncV3(int memberId)
-        {
-            var transactionAll = await GetAllByMemberIdAsync(memberId);
-
-            var finalRes = new List<DSTransactionDtoV2>();
-
-            var dsaccountids = transactionAll.DistinctBy(x => x.DSAccountID).Select(x => x.DSAccountID);
-
-            int rowID = 0;
-
-            foreach (var dsaccountid in dsaccountids)
-            {
-                decimal balance = 0;
-                var dsTransactionsByAcc = transactionAll.Where(x => x.DSAccountID == dsaccountid).OrderBy(x => x.CreatedDateTime);
-
-                foreach (var dsTransactionByAcc in dsTransactionsByAcc)
-                {
-                    var dsTransferOutTran = new DSTransactionDto();
-                    if (dsTransactionByAcc.DSTypeID == (int)EnumDSTranType.TransferOut)
-                    {
-                        dsTransferOutTran = transactionAll.FirstOrDefault(x => x.DSTransferOutID == dsTransactionByAcc.ID);
-                    }
-
-                    balance = _debitItems.Contains(dsTransactionByAcc.DSTypeID) ? balance - dsTransactionByAcc.Amount : balance + dsTransactionByAcc.Amount;
-                    finalRes.Add(new DSTransactionDtoV2
-                    {
-                        RowID = rowID++,
-                        DSTypeName = dsTransactionByAcc.DSTypeName,
-                        DSAccountName = dsTransactionByAcc.DSAccountName,
-                        DSItemName = dsTransactionByAcc.DSTypeID == 3 ?
-                            dsTransferOutTran.DSAccountName :
-                            dsTransactionByAcc.DSItemName,
-                        ID = dsTransactionByAcc.ID,
-                        DSTypeID = dsTransactionByAcc.DSTypeID,
-                        DSAccountID = dsTransactionByAcc.DSAccountID,
-                        DSAccountToID = dsTransactionByAcc.DSTypeID == 3 ? dsTransferOutTran.DSAccountID : 0,
-                        DSTransferOutID = dsTransactionByAcc.DSTransferOutID,
-                        Description = dsTransactionByAcc.Description,
-                        CreatedDateTime = dsTransactionByAcc.CreatedDateTime,
-                        Amount = dsTransactionByAcc.Amount,
-                        Balance = balance
-                    }); ;
-                }
-            }
-            var finalResOrdered = finalRes.OrderByDescending(x => x.CreatedDateTime).ThenByDescending(x => x.RowID);
-            return [.. finalResOrdered];
-        }
-
-        public async Task<IEnumerable<DSTransactionDtoV2>> GetDSTransactionByDSAccountAsync(int dsAccountID, int memberId)
-        {
-            var transactionAll = await GetAllByMemberIdAsync(memberId);
-
-            var finalRes = new List<DSTransactionDtoV2>();
-
-            var dsaccountids = new List<int> { dsAccountID };
-
-            int rowID = 0;
-
-            foreach (var dsaccountid in dsaccountids)
-            {
-                decimal balance = 0;
-                var dsTransactionsByAcc = transactionAll.Where(x => x.DSAccountID == dsaccountid).OrderBy(x => x.CreatedDateTime);
-
-                foreach (var dsTransactionByAcc in dsTransactionsByAcc)
-                {
-                    var dsTransferOutTran = new DSTransactionDto();
-                    if (dsTransactionByAcc.DSTypeID == (int)EnumDSTranType.TransferOut)
-                    {
-                        dsTransferOutTran = transactionAll.FirstOrDefault(x => x.DSTransferOutID == dsTransactionByAcc.ID);
-                    }
-
-                    balance = _debitItems.Contains(dsTransactionByAcc.DSTypeID) ? balance - dsTransactionByAcc.Amount : balance + dsTransactionByAcc.Amount;
-                    finalRes.Add(new DSTransactionDtoV2
-                    {
-                        RowID = rowID++,
-                        DSTypeName = dsTransactionByAcc.DSTypeName,
-                        DSAccountName = dsTransactionByAcc.DSAccountName,
-                        DSItemName = dsTransactionByAcc.DSTypeID == 3 ?
-                            dsTransferOutTran.DSAccountName :
-                            dsTransactionByAcc.DSItemName,
-                        ID = dsTransactionByAcc.ID,
-                        DSTypeID = dsTransactionByAcc.DSTypeID,
-                        DSAccountID = dsTransactionByAcc.DSAccountID,
-                        DSAccountToID = dsTransactionByAcc.DSTypeID == 3 ? dsTransferOutTran.DSAccountID : 0,
-                        DSTransferOutID = dsTransactionByAcc.DSTransferOutID,
-                        Description = dsTransactionByAcc.Description,
-                        CreatedDateTime = dsTransactionByAcc.CreatedDateTime,
-                        Amount = dsTransactionByAcc.Amount,
-                        Balance = balance
-                    });
-                }
-            }
-            var finalResOrdered = finalRes.OrderByDescending(x => x.CreatedDateTime).ThenByDescending(x => x.RowID);
-
-            return [.. finalResOrdered];
         }
 
         public async Task<IEnumerable<DSTransactionDto>> GetAllByMemberIdAsync(int memberId)
