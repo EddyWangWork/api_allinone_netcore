@@ -1,6 +1,5 @@
-﻿using Allinone.DLL.Repositories;
+using Allinone.DLL.Repositories;
 using Allinone.Domain.Exceptions;
-using Allinone.Domain.Shops.ShopDiarys;
 using Allinone.Domain.Trips;
 using Allinone.Helper.Mapper;
 
@@ -21,28 +20,20 @@ namespace Allinone.BLL.Trips
         ITripRepository tripRepository,
         IMapModel mapper) : BaseBLL, ITripService
     {
-        public async Task<IEnumerable<TripResultDto>> GetAllDetailsV2Async()
-        {
-            return await tripRepository.GetAllDetailsV2Async();
-        }
+        public Task<IEnumerable<TripResultDto>> GetAllDetailsV2Async() =>
+            tripRepository.GetAllDetailsV2Async();
 
+        public Task<IEnumerable<Trip>> GetAllAsync() =>
+            tripRepository.GetAllAsync();
 
-        public async Task<IEnumerable<Trip>> GetAllAsync()
-        {
-            return await tripRepository.GetAllAsync();
-        }
-
-        public async Task<Trip> Get(int id)
-        {
-            return await tripRepository.GetAsync(id) ?? throw new TripNotFoundException();
-        }
+        public async Task<Trip> Get(int id) =>
+            await tripRepository.GetAsync(id) ?? throw new TripNotFoundException();
 
         public async Task<Trip> Add(TripAddReq req)
         {
-            if (MemberId == 0) throw new MemberNotFoundException();
+            EnsureMember();
 
             var entity = mapper.MapDto<TripAddReq, Trip>(req);
-
             await tripRepository.Add(entity);
 
             return entity;
@@ -50,26 +41,28 @@ namespace Allinone.BLL.Trips
 
         public async Task<Trip> Update(int id, TripAddReq req)
         {
-            if (MemberId == 0) throw new MemberNotFoundException();
+            EnsureMember();
 
-            var entity = await tripRepository.GetAsync(id) ?? throw new TripNotFoundException();
-
+            var entity = await Get(id);
             mapper.Map(req, entity);
-
-            tripRepository.Update(entity);
+            await tripRepository.Update(entity);
 
             return entity;
         }
 
         public async Task<Trip> Delete(int id)
         {
-            if (MemberId == 0) throw new MemberNotFoundException();
+            EnsureMember();
 
-            var entity = await tripRepository.GetAsync(id) ?? throw new TripNotFoundException();
-
-            tripRepository.Delete(entity);
+            var entity = await Get(id);
+            await tripRepository.Delete(entity);
 
             return entity;
+        }
+
+        private static void EnsureMember()
+        {
+            if (MemberId == 0) throw new MemberNotFoundException();
         }
     }
 }

@@ -1,4 +1,3 @@
-﻿using Allinone.BLL.Shops;
 using Allinone.BLL.Trips;
 using Allinone.Domain.Trips;
 using Microsoft.AspNetCore.Authorization;
@@ -11,70 +10,29 @@ namespace Allinone.API.Controllers
     [Route("[controller]")]
     public class TripController(ITripService tripService) : ControllerBase
     {
-        [HttpGet]
-        [Route("GetTripDetails")]
-        public async Task<IActionResult> GetAllDetailsV2Async()
-        {
-            var response = await tripService.GetAllDetailsV2Async();
-            return Ok(response);
-        }
+        // Legacy routes (GetTripDetails, GetTrips, addTrip, updateTrip, deleteTrip) are kept for existing clients.
+        [HttpGet("GetTripDetails")]
+        [HttpGet("GetTrips")]
+        public async Task<IActionResult> GetTripDetails() =>
+            Ok(await tripService.GetAllDetailsV2Async());
 
-        [HttpGet]
-        [Route("GetTrips")]
-        public async Task<IActionResult> GetTripsAsync()
-        {
-            var response = await tripService.GetAllDetailsV2Async();
-            return Ok(response);
-        }
+        [HttpGet("{id:int}")]
+        public async Task<IActionResult> Get(int id) =>
+            Ok(await tripService.Get(id));
 
         [HttpPost]
-        [Route("addTrip")]
-        public async Task<IActionResult> AddTrip(TripAddReq req)
-        {
-            var response = await tripService.Add(req);
-            return Ok(response);
-        }
+        [HttpPost("addTrip")]
+        public async Task<IActionResult> Add(TripAddReq req) =>
+            Ok(await tripService.Add(req));
 
-        [HttpPut("updateTrip/{id}")]
-        public async Task<IActionResult> UpdateTrip(int id, TripAddReq req)
-        {
-            var response = await tripService.Update(id, req);
-            return Ok(response);
-        }
+        [HttpPut("{id:int}")]
+        [HttpPut("updateTrip/{id:int}")]
+        public async Task<IActionResult> Update(int id, TripAddReq req) =>
+            Ok(await tripService.Update(id, req));
 
-        [HttpDelete("deleteTrip/{id}")]
-        public async Task<IActionResult> DeleteTrip(int id)
-        {
-            var response = await tripService.Delete(id);
-            return Ok(response);
-        }
-
-        [HttpGet("{id}")]
-        public async Task<IActionResult> Get(int id)
-        {
-            var response = await tripService.Get(id);
-            return Ok(response);
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> Add(TripAddReq req)
-        {
-            var response = await tripService.Add(req);
-            return Ok(response);
-        }
-
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, TripAddReq req)
-        {
-            var response = await tripService.Update(id, req);
-            return Ok(response);
-        }
-
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
-        {
-            var response = await tripService.Delete(id);
-            return Ok(response);
-        }
+        [HttpDelete("{id:int}")]
+        [HttpDelete("deleteTrip/{id:int}")]
+        public async Task<IActionResult> Delete(int id) =>
+            Ok(await tripService.Delete(id));
     }
 }
