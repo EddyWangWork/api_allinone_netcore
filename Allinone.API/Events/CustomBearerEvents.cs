@@ -3,6 +3,7 @@ using Allinone.DLL.Repositories;
 using Allinone.Domain;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text.Json;
@@ -13,16 +14,16 @@ namespace Allinone.API.Events
     {
         private readonly IIdleTimeTrackingService _idleTimeService;
         private readonly ITokenBlacklistRepository _tokenBlacklistRepository;
-        private readonly IConfiguration _configuration;
+        private readonly JwtSettings _jwtSettings;
 
         public CustomBearerEvents(
             IIdleTimeTrackingService idleTimeService,
             ITokenBlacklistRepository tokenBlacklistRepository,
-            IConfiguration configuration)
+            IOptions<JwtSettings> jwtOptions)
         {
             _idleTimeService = idleTimeService;
             _tokenBlacklistRepository = tokenBlacklistRepository;
-            _configuration = configuration;
+            _jwtSettings = jwtOptions.Value;
         }
 
         public override Task AuthenticationFailed(AuthenticationFailedContext context)
@@ -75,8 +76,7 @@ namespace Allinone.API.Events
             if (!string.IsNullOrEmpty(userId))
             {
                 // Get idle timeout from configuration (in minutes, default to 30)
-                var idleTimeoutMinutes = _configuration.GetValue<int>("Jwt:IdleTimeoutMinutes", 30);
-                var idleTimeout = TimeSpan.FromMinutes(idleTimeoutMinutes);
+                var idleTimeout = TimeSpan.FromMinutes(_jwtSettings.IdleTimeoutMinutes);
 
                 // Check if user has been idle for too long
                 if (!await _idleTimeService.IsUserActiveAsync(userId, idleTimeout))

@@ -2,6 +2,7 @@ using Allinone.API.Services;
 using Allinone.Domain;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using System.Security.Claims;
 
 namespace Allinone.API.Controllers
@@ -13,12 +14,12 @@ namespace Allinone.API.Controllers
     public class SessionController : ControllerBase
     {
         private readonly IIdleTimeTrackingService _idleTimeService;
-        private readonly IConfiguration _configuration;
+        private readonly JwtSettings _jwtSettings;
 
-        public SessionController(IIdleTimeTrackingService idleTimeService, IConfiguration configuration)
+        public SessionController(IIdleTimeTrackingService idleTimeService, IOptions<JwtSettings> jwtOptions)
         {
             _idleTimeService = idleTimeService;
-            _configuration = configuration;
+            _jwtSettings = jwtOptions.Value;
         }
 
         /// <summary>
@@ -39,7 +40,7 @@ namespace Allinone.API.Controllers
             }
 
             var lastActivity = await _idleTimeService.GetLastActivityAsync(userId);
-            var idleTimeoutMinutes = _configuration.GetValue<int>("Jwt:IdleTimeoutMinutes", 30);
+            var idleTimeoutMinutes = _jwtSettings.IdleTimeoutMinutes;
             var idleTimeout = TimeSpan.FromMinutes(idleTimeoutMinutes);
 
             if (!lastActivity.HasValue)

@@ -5,6 +5,7 @@ using Allinone.Domain.Members;
 using Allinone.Domain.Sessions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using System.IdentityModel.Tokens.Jwt;
 
 namespace Allinone.API.Controllers
@@ -19,20 +20,20 @@ namespace Allinone.API.Controllers
         private readonly IUserSessionRepository _sessionRepository;
         private readonly ITokenBlacklistRepository _tokenBlacklistRepository;
         private readonly IIdleTimeTrackingService _idleTimeService;
-        private readonly IConfiguration _configuration;
+        private readonly JwtSettings _jwtSettings;
 
         public AdminController(
             IMemberRepository memberRepository,
             IUserSessionRepository sessionRepository,
             ITokenBlacklistRepository tokenBlacklistRepository,
             IIdleTimeTrackingService idleTimeService,
-            IConfiguration configuration)
+            IOptions<JwtSettings> jwtOptions)
         {
             _memberRepository = memberRepository;
             _sessionRepository = sessionRepository;
             _tokenBlacklistRepository = tokenBlacklistRepository;
             _idleTimeService = idleTimeService;
-            _configuration = configuration;
+            _jwtSettings = jwtOptions.Value;
         }
 
         /// <summary>
@@ -206,7 +207,7 @@ namespace Allinone.API.Controllers
                 var session = await _sessionRepository.GetByMemberIdAsync(member.ID);
                 if (session != null)
                 {
-                    var idleTimeoutMinutes = _configuration.GetValue<int>("Jwt:IdleTimeoutMinutes", 30);
+                    var idleTimeoutMinutes = _jwtSettings.IdleTimeoutMinutes;
                     var timeSinceLastActivity = DateTime.UtcNow - session.LastActivityTime;
                     var isActive = timeSinceLastActivity <= TimeSpan.FromMinutes(idleTimeoutMinutes);
 
@@ -254,7 +255,7 @@ namespace Allinone.API.Controllers
             var members = await _memberRepository.GetAllAsync();
             var member = members.FirstOrDefault(m => m.ID == memberId);
 
-            var idleTimeoutMinutes = _configuration.GetValue<int>("Jwt:IdleTimeoutMinutes", 30);
+            var idleTimeoutMinutes = _jwtSettings.IdleTimeoutMinutes;
             var timeSinceLastActivity = DateTime.UtcNow - session.LastActivityTime;
             var isActive = timeSinceLastActivity <= TimeSpan.FromMinutes(idleTimeoutMinutes);
 
@@ -297,7 +298,7 @@ namespace Allinone.API.Controllers
             // Add token to blacklist before deleting session
             if (!string.IsNullOrEmpty(session.TokenIdentifier))
             {
-                var expireMinutes = _configuration.GetValue<int>("Jwt:ExpireMinutes", 60);
+                var expireMinutes = _jwtSettings.ExpireMinutes;
                 var tokenExpiry = DateTime.UtcNow.AddMinutes(expireMinutes);
 
                 await _tokenBlacklistRepository.AddToBlacklistAsync(
@@ -327,7 +328,7 @@ namespace Allinone.API.Controllers
             var members = await _memberRepository.GetAllAsync();
             var totalMembers = members.Count();
 
-            var idleTimeoutMinutes = _configuration.GetValue<int>("Jwt:IdleTimeoutMinutes", 30);
+            var idleTimeoutMinutes = _jwtSettings.IdleTimeoutMinutes;
             var activeSessions = 0;
             var idleSessions = 0;
 

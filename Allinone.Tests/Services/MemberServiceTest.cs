@@ -45,7 +45,7 @@ namespace Allinone.Tests.Services
             var auditlogRepository = new AuditlogRepository(context);
             var auditlogService = new AuditlogService(auditlogRepository, mapModel);
 
-            _memberService = new MemberService(auditlogService, memberRepository, mapModel);
+            _memberService = new MemberService(auditlogService, memberRepository, new UserSessionRepository(context), mapModel, Microsoft.Extensions.Options.Options.Create(new Allinone.Domain.JwtSettings { Key = "test_secret_key_that_is_long_enough_123!", Issuer = "test", Audience = "test" }));
         }
 
         [Fact]

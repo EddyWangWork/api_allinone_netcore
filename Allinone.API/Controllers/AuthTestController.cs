@@ -1,6 +1,7 @@
 using Allinone.Domain;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using System.IdentityModel.Tokens.Jwt;
 
 namespace Allinone.API.Controllers
@@ -9,11 +10,11 @@ namespace Allinone.API.Controllers
     [Route("api/[controller]")]
     public class AuthTestController : ControllerBase
     {
-        private readonly IConfiguration _configuration;
+        private readonly JwtSettings _jwtSettings;
 
-        public AuthTestController(IConfiguration configuration)
+        public AuthTestController(IOptions<JwtSettings> jwtOptions)
         {
-            _configuration = configuration;
+            _jwtSettings = jwtOptions.Value;
         }
 
         /// <summary>
@@ -71,8 +72,8 @@ namespace Allinone.API.Controllers
 
                 var jwtToken = handler.ReadJwtToken(request.Token);
 
-                var expectedIssuer = _configuration["Jwt:Issuer"];
-                var expectedAudience = _configuration["Jwt:Audience"];
+                var expectedIssuer = _jwtSettings.Issuer;
+                var expectedAudience = _jwtSettings.Audience;
 
                 return Ok(new ApiResponse(new
                 {
@@ -112,10 +113,10 @@ namespace Allinone.API.Controllers
         {
             return Ok(new ApiResponse(new
             {
-                issuer = _configuration["Jwt:Issuer"],
-                audience = _configuration["Jwt:Audience"],
-                expireMinutes = _configuration.GetValue<int>("Jwt:ExpireMinutes"),
-                idleTimeoutMinutes = _configuration.GetValue<int>("Jwt:IdleTimeoutMinutes"),
+                issuer = _jwtSettings.Issuer,
+                audience = _jwtSettings.Audience,
+                expireMinutes = _jwtSettings.ExpireMinutes,
+                idleTimeoutMinutes = _jwtSettings.IdleTimeoutMinutes,
                 note = "The 'Key' is hidden for security reasons"
             }));
         }
