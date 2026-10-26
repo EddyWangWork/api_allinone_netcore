@@ -10,33 +10,12 @@ namespace Allinone.API.Controllers
     [Route("[controller]")]
     public class ShopTypeController(IShopTypeService shopTypeService) : ControllerBase
     {
+        // Legacy routes kept for backward compatibility
         [HttpGet]
-        [Route("GetShopTypes")]
-        public async Task<IActionResult> GetShopTypesAsync()
+        [HttpGet("GetShopTypes")]
+        public async Task<IActionResult> GetShopTypes()
         {
             var response = await shopTypeService.GetAllByMemberAsync();
-            return Ok(response);
-        }
-
-        [HttpPost]
-        [Route("addShopType")]
-        public async Task<IActionResult> AddShopType(ShopTypeAddReq req)
-        {
-            var response = await shopTypeService.Add(req);
-            return Ok(response);
-        }
-
-        [HttpPut("updateShopType/{id}")]
-        public async Task<IActionResult> UpdateShopType(int id, ShopTypeAddReq req)
-        {
-            var response = await shopTypeService.Update(id, req);
-            return Ok(response);
-        }
-
-        [HttpDelete("deleteShopType/{id}")]
-        public async Task<IActionResult> DeleteShopType(int id)
-        {
-            var response = await shopTypeService.Delete(id);
             return Ok(response);
         }
 
@@ -48,6 +27,7 @@ namespace Allinone.API.Controllers
         }
 
         [HttpPost]
+        [HttpPost("addShopType")]
         public async Task<IActionResult> Add(ShopTypeAddReq req)
         {
             var response = await shopTypeService.Add(req);
@@ -55,6 +35,7 @@ namespace Allinone.API.Controllers
         }
 
         [HttpPut("{id}")]
+        [HttpPut("updateShopType/{id}")]
         public async Task<IActionResult> Update(int id, ShopTypeAddReq req)
         {
             var response = await shopTypeService.Update(id, req);
@@ -62,6 +43,7 @@ namespace Allinone.API.Controllers
         }
 
         [HttpDelete("{id}")]
+        [HttpDelete("deleteShopType/{id}")]
         public async Task<IActionResult> Delete(int id)
         {
             var response = await shopTypeService.Delete(id);

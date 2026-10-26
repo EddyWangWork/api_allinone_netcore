@@ -8,7 +8,7 @@ namespace Allinone.Domain.Shops.ShopTypes
     {
         [Key]
         public int ID { get; set; }
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
 
         public int MemberID { get; set; }
         public Member Member { get; set; }
