@@ -16,7 +16,12 @@ namespace Allinone.BLL.Todolists
     {
         public IEnumerable<TodolistDto> GetTodolistsUndone()
         {
-            var todolists = _todolistRepository.GetTodolistsUndone(MemberId);
+            return GetTodolistsUndone(DateTime.Now);
+        }
+
+        public IEnumerable<TodolistDto> GetTodolistsUndone(DateTime date)
+        {
+            var todolists = _todolistRepository.GetTodolistsUndone(MemberId, date);
             foreach (var item in todolists)
             {
                 if (MemoryCacheHelper.CacheTodolistType.TryGetValue(item.CategoryID, out var name))

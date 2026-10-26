@@ -8,6 +8,7 @@ namespace Allinone.DLL.Repositories
     public interface ITodolistRepository
     {
         IEnumerable<TodolistDto> GetTodolistsUndone(int memberId);
+        IEnumerable<TodolistDto> GetTodolistsUndone(int memberId, DateTime date);
         Task<bool>? IsExist(int id);
         Task<Todolist>? GetAsync(int id);
         Task<IEnumerable<Todolist>> GetAllAsync();
@@ -18,7 +19,10 @@ namespace Allinone.DLL.Repositories
 
     public class TodolistRepository(DSContext context) : ITodolistRepository
     {
-        public IEnumerable<TodolistDto> GetTodolistsUndone(int memberId)
+        public IEnumerable<TodolistDto> GetTodolistsUndone(int memberId) =>
+            GetTodolistsUndone(memberId, DateTime.Now);
+
+        public IEnumerable<TodolistDto> GetTodolistsUndone(int memberId, DateTime date)
         {
             var todolists = new List<TodolistDto>();
 
@@ -46,8 +50,8 @@ namespace Allinone.DLL.Repositories
             foreach (var todolistG in todolistsG)
             {
                 if ((todolistG.Any(x => x.CategoryID == (int)EnumTodolistType.Monthly
-                        && x.DoneDate.Year == DateTime.Now.Year
-                        && x.DoneDate.Month == DateTime.Now.Month)) ||
+                        && x.DoneDate.Year == date.Year
+                        && x.DoneDate.Month == date.Month)) ||
                     todolistG.Any(x => x.CategoryID == (int)EnumTodolistType.Normal
                         && x.TodolistDoneID > 0))
                     continue;

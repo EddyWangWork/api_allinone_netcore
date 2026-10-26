@@ -17,6 +17,13 @@ namespace Allinone.API.Controllers
             return Ok(response);
         }
 
+        [HttpGet("date/{date}")]
+        public async Task<IActionResult> GetTodolistsUndone(DateTime date)
+        {
+            var response = todolistService.GetTodolistsUndone(date);
+            return Ok(response);
+        }
+
         [HttpGet("{id}")]
         public async Task<IActionResult> Get(int id)
         {
