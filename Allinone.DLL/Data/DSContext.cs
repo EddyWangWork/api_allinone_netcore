@@ -61,6 +61,17 @@ namespace Allinone.DLL.Data
             modelBuilder.Entity<TodolistDone>()
                 .HasIndex(x => new { x.TodolistID, x.UpdateDate });
 
+            modelBuilder.Entity<DSTransaction>(b =>
+            {
+                b.HasIndex(x => new { x.MemberID, x.CreatedDateTime });
+
+                b.HasOne(x => x.DSType).WithMany().HasForeignKey(x => x.DSTypeID).OnDelete(DeleteBehavior.Restrict);
+                b.HasOne(x => x.DSAccount).WithMany().HasForeignKey(x => x.DSAccountID).OnDelete(DeleteBehavior.Restrict);
+                b.HasOne(x => x.DSItem).WithMany().HasForeignKey(x => x.DSItemID).OnDelete(DeleteBehavior.Restrict);
+                b.HasOne(x => x.DSItemSub).WithMany().HasForeignKey(x => x.DSItemSubID).OnDelete(DeleteBehavior.Restrict);
+                b.HasOne(x => x.TransferOutTransaction).WithMany().HasForeignKey(x => x.TransferOutTransactionID).OnDelete(DeleteBehavior.Restrict);
+            });
+
             // Prevent multiple cascade path error
             modelBuilder.Entity<DiaryDetail>()
                 .HasOne(d => d.Diary)

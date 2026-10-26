@@ -109,7 +109,7 @@ namespace Allinone.Tests.Controller
                     DSTypeID = (int)EnumDSTranType.TransferIn,
                     DSAccountID = _dsAccountId2,
                     //DSItemID = _dsItemId,
-                    DSTransferOutID = _dsTransactionId2,
+                    TransferOutTransactionID = _dsTransactionId2,
                     CreatedDateTime = DateTime.UtcNow.AddHours(8),
                     Amount = 100,
                     MemberID = _memberId

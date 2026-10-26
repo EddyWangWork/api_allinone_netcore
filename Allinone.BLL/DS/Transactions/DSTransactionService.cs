@@ -317,8 +317,8 @@ namespace Allinone.BLL.DS.Transactions
         {
             var finalRes = new List<DSTransactionDtoV2>();
             var transferOutLookup = transactionAll
-                .Where(x => x.DSTransferOutID != 0)
-                .GroupBy(x => x.DSTransferOutID)
+                .Where(x => x.TransferOutTransactionID != 0)
+                .GroupBy(x => x.TransferOutTransactionID)
                 .ToDictionary(g => g.Key, g => g.First());
             var byAccount = transactionAll.ToLookup(x => x.DSAccountID);
             int rowID = 0;
@@ -343,7 +343,7 @@ namespace Allinone.BLL.DS.Transactions
                         DSTypeID = tran.DSTypeID,
                         DSAccountID = tran.DSAccountID,
                         DSAccountToID = isTransferOut ? transferIn?.DSAccountID ?? 0 : 0,
-                        DSTransferOutID = tran.DSTransferOutID,
+                        TransferOutTransactionID = tran.TransferOutTransactionID,
                         Description = tran.Description,
                         CreatedDateTime = tran.CreatedDateTime,
                         Amount = tran.Amount,
@@ -375,7 +375,11 @@ namespace Allinone.BLL.DS.Transactions
             if (MemberId == 0) throw new MemberNotFoundException();
             List<DSTransaction> dsTransactions = [];
 
+            NormalizeReq(req);
             await IsValidAddReq(req);
+
+            if (req.DSTypeID == (int)EnumDSTranType.TransferIn)
+                throw new DSTransactionBadRequestException("Transfer in is created by a transfer out");
 
             try
             {
@@ -384,28 +388,16 @@ namespace Allinone.BLL.DS.Transactions
 
                 await unitOfWork.BeginTransactionAsync();
 
-                await unitOfWork.DSTransaction.AddAsync(entity);
-                await unitOfWork.SaveAsync();
+                await dsTransactionRepository.AddAsync(entity);
 
                 if (req.DSTypeID == (int)EnumDSTranType.TransferOut)
                 {
-                    DSTransaction entityToAccount = new()
-                    {
-                        DSTypeID = (int)EnumDSTranType.TransferIn,
-                        Amount = entity.Amount,
-                        Description = entity.Description,
-                        DSAccountID = req.DSAccountToID,
-                        DSTransferOutID = entity.ID,
-                        CreatedDateTime = req.CreatedDateTime,
-                        MemberID = MemberId
-                    };
-
-                    await unitOfWork.DSTransaction.AddAsync(entityToAccount);
-                    await unitOfWork.SaveAsync();
-
+                    var entityToAccount = CreateTransferIn(entity, req.DSAccountToID);
+                    await dsTransactionRepository.AddAsync(entityToAccount);
                     dsTransactions.Add(entityToAccount);
                 }
 
+                await unitOfWork.SaveAsync();
                 await unitOfWork.CommitTransactionAsync();
 
                 dsTransactions.Add(entity);
@@ -425,6 +417,8 @@ namespace Allinone.BLL.DS.Transactions
         {
             if (MemberId == 0) throw new MemberNotFoundException();
 
+            NormalizeReq(req);
+
             _ = await dsTransactionRepository.IsExistByMember(MemberId, id) ?
                 true : throw new DSTransactionBadRequestException("Invalid DSTransaction id");
 
@@ -436,74 +430,50 @@ namespace Allinone.BLL.DS.Transactions
             {
                 await unitOfWork.BeginTransactionAsync();
 
-                var origin = await dsTransactionRepository.GetAsync(id) ?? throw new DSItemNotFoundException();
-
-                if (req.DSTypeID == (int)EnumDSTranType.TransferOut)
-                {
-                    if (req.DSAccountToID == 0)
-                        throw new DSTransactionBadRequestException("Must insert a transfer to account");
-
-                    if (req.DSAccountToID == req.DSAccountID)
-                        throw new DSTransactionBadRequestException("Transfer out account cannot be same");
-                }
+                var origin = await dsTransactionRepository.GetAsync(id) ?? throw new DSTransactionNotFoundException();
 
                 if (_transferTypes.Contains(origin.DSTypeID))
                 {
-                    //var originFromToAccount = _context.DSTransactions.
-                    //    FirstOrDefault(x => origin.DSTypeID == 3 ? x.DSTransferOutID == id : x.ID == origin.DSTransferOutID);
+                    var pair = await GetTransferPairAsync(origin) ?? throw new DSTransactionNotFoundException();
 
-                    var originFromToAccount = origin.DSTypeID == (int)EnumDSTranType.TransferOut ?
-                        await dsTransactionRepository.GetByTransferOutIdAsync(id) :
-                        await dsTransactionRepository.GetAsync(origin.DSTransferOutID);
-
-                    if (!_transferTypes.Contains(req.DSTypeID)) //not transfer type
+                    if (_transferTypes.Contains(req.DSTypeID))
                     {
-                        dsTransactionRepository.Delete(originFromToAccount);
-                        mapper.Map(req, origin);
+                        var isOriginOut = origin.DSTypeID == (int)EnumDSTranType.TransferOut;
+                        origin.DSAccountID = isOriginOut ? req.DSAccountID : req.DSAccountToID;
+                        pair.DSAccountID = isOriginOut ? req.DSAccountToID : req.DSAccountID;
 
-                        dsTransactionRepository.Update(origin);
+                        foreach (var row in new[] { origin, pair })
+                        {
+                            row.Amount = req.Amount;
+                            row.Description = req.Description;
+                            row.CreatedDateTime = req.CreatedDateTime;
+                        }
+
+                        dsTransactions.Add(pair);
                     }
                     else
                     {
-                        origin.DSAccountID = origin.DSTypeID == (int)EnumDSTranType.TransferOut ?
-                            req.DSAccountID : req.DSAccountToID;
-                        origin.Amount = req.Amount;
-                        origin.Description = req.Description;
-
-                        originFromToAccount.DSAccountID = origin.DSTypeID == 3 ? req.DSAccountToID : req.DSAccountID;
-                        originFromToAccount.Amount = req.Amount;
-                        originFromToAccount.Description = req.Description;
-
-                        dsTransactionRepository.Update(origin);
-                        dsTransactionRepository.Update(originFromToAccount);
-
-                        dsTransactions.Add(originFromToAccount);
+                        origin.TransferOutTransactionID = null;
+                        dsTransactionRepository.Delete(pair);
+                        mapper.Map(req, origin);
                     }
                 }
                 else
                 {
+                    if (req.DSTypeID == (int)EnumDSTranType.TransferIn)
+                        throw new DSTransactionBadRequestException("Transfer in is created by a transfer out");
+
                     mapper.Map(req, origin);
-                    dsTransactionRepository.Update(origin);
 
-                    if (_transferTypes.Contains(origin.DSTypeID)) //not transfer type
+                    if (req.DSTypeID == (int)EnumDSTranType.TransferOut)
                     {
-                        var toAccount = new DSTransaction
-                        {
-                            DSTransferOutID = origin.ID,
-                            DSTypeID = (int)EnumDSTranType.TransferIn,
-                            DSAccountID = req.DSAccountToID,
-                            Description = origin.Description,
-                            Amount = origin.Amount,
-                            CreatedDateTime = origin.CreatedDateTime,
-                            MemberID = MemberId
-                        };
-
+                        var toAccount = CreateTransferIn(origin, req.DSAccountToID);
                         await dsTransactionRepository.AddAsync(toAccount);
-
                         dsTransactions.Add(toAccount);
                     }
                 }
 
+                await unitOfWork.SaveAsync();
                 await unitOfWork.CommitTransactionAsync();
 
                 dsTransactions.Add(origin);
@@ -534,19 +504,17 @@ namespace Allinone.BLL.DS.Transactions
 
                 var origin = await dsTransactionRepository.GetAsync(id) ?? throw new DSTransactionNotFoundException();
 
-                dsTransactionRepository.Delete(origin);
-
                 if (_transferTypes.Contains(origin.DSTypeID))
                 {
-                    var originFromToAccount = (origin.DSTypeID == (int)EnumDSTranType.TransferOut ?
-                        await dsTransactionRepository.GetByTransferOutIdAsync(id) :
-                        await dsTransactionRepository.GetAsync(origin.DSTransferOutID)) ??
-                        throw new DSTransactionNotFoundException();
+                    var pair = await GetTransferPairAsync(origin) ?? throw new DSTransactionNotFoundException();
 
-                    dsTransactionRepository.Delete(originFromToAccount);
-                    dsTransactions.Add(originFromToAccount);
+                    dsTransactionRepository.Delete(pair);
+                    dsTransactions.Add(pair);
                 }
 
+                dsTransactionRepository.Delete(origin);
+
+                await unitOfWork.SaveAsync();
                 await unitOfWork.CommitTransactionAsync();
 
                 dsTransactions.Add(origin);
@@ -560,31 +528,35 @@ namespace Allinone.BLL.DS.Transactions
                 await unitOfWork.RollbackTransactionAsync();
                 throw;
             }
-
-            //var origin = _context.DSTransactions.FirstOrDefault(x => x.ID == id);
-            //if (origin == null)
-            //{
-            //    throw new NotFoundException("Transaction Record not found");
-            //}
-
-            //_context.DSTransactions.Remove(origin);
-
-            //if (_transferTypes.Contains(origin.DSTypeID))
-            //{
-            //    var originFromToAcction = _context.DSTransactions.
-            //        FirstOrDefault(x => origin.DSTypeID == 3 ? x.DSTransferOutID == id : x.ID == origin.DSTransferOutID);
-            //    if (originFromToAcction == null)
-            //    {
-            //        throw new NotFoundException("Transaction Record not found");
-            //    }
-            //    _context.DSTransactions.Remove(originFromToAcction);
-            //}
-
-            //_context.SaveChanges();
-            //await SetGlobalDSTransactions();
-
-            //return true;
         }
+
+        private static void NormalizeReq(DSTransactionReq req)
+        {
+            if (req.DSItemID == 0) req.DSItemID = null;
+            if (req.DSItemSubID == 0) req.DSItemSubID = null;
+
+            if (_transferTypes.Contains(req.DSTypeID))
+            {
+                req.DSItemID = null;
+                req.DSItemSubID = null;
+            }
+        }
+
+        private static DSTransaction CreateTransferIn(DSTransaction transferOut, int dsAccountToId) => new()
+        {
+            DSTypeID = (int)EnumDSTranType.TransferIn,
+            DSAccountID = dsAccountToId,
+            Amount = transferOut.Amount,
+            Description = transferOut.Description,
+            CreatedDateTime = transferOut.CreatedDateTime,
+            MemberID = transferOut.MemberID,
+            TransferOutTransaction = transferOut
+        };
+
+        private async Task<DSTransaction?> GetTransferPairAsync(DSTransaction transaction) =>
+            transaction.DSTypeID == (int)EnumDSTranType.TransferOut ?
+                await dsTransactionRepository.GetByTransferOutIdAsync(transaction.ID) :
+                await dsTransactionRepository.GetAsync(transaction.TransferOutTransactionID ?? 0);
 
         private async Task IsValidAddReq(DSTransactionReq req)
         {
@@ -614,17 +586,17 @@ namespace Allinone.BLL.DS.Transactions
             }
             else
             {
-                _ = (req.DSItemID == 0 && req.DSItemSubID == 0) ?
+                _ = (req.DSItemID is null && req.DSItemSubID is null) ?
                 throw new DSAccountNotFoundException("DSItemID and DSItemSubID must atleast have 1") : true;
 
-                if (req.DSItemID != 0)
+                if (req.DSItemID is int itemId)
                 {
-                    _ = await dsItemRepository.IsExistByMemberAndIdAsync(MemberId, req.DSItemID) ?
+                    _ = await dsItemRepository.IsExistByMemberAndIdAsync(MemberId, itemId) ?
                     true : throw new DSItemNotFoundException();
                 }
-                if (req.DSItemSubID != 0)
+                if (req.DSItemSubID is int itemSubId)
                 {
-                    _ = await dsItemRepository.IsExistByMemberAndSubIdAsync(MemberId, req.DSItemSubID) ?
+                    _ = await dsItemRepository.IsExistByMemberAndSubIdAsync(MemberId, itemSubId) ?
                     true : throw new DSItemSubNotFoundException();
                 }
 

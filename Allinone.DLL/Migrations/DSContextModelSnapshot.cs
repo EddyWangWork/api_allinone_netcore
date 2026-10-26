@@ -154,13 +154,10 @@ namespace Allinone.DLL.Migrations
                     b.Property<int>("DSAccountID")
                         .HasColumnType("int");
 
-                    b.Property<int>("DSItemID")
+                    b.Property<int?>("DSItemID")
                         .HasColumnType("int");
 
-                    b.Property<int>("DSItemSubID")
-                        .HasColumnType("int");
-
-                    b.Property<int>("DSTransferOutID")
+                    b.Property<int?>("DSItemSubID")
                         .HasColumnType("int");
 
                     b.Property<int>("DSTypeID")
@@ -172,9 +169,22 @@ namespace Allinone.DLL.Migrations
                     b.Property<int>("MemberID")
                         .HasColumnType("int");
 
+                    b.Property<int?>("TransferOutTransactionID")
+                        .HasColumnType("int");
+
                     b.HasKey("ID");
 
-                    b.HasIndex("MemberID");
+                    b.HasIndex("DSAccountID");
+
+                    b.HasIndex("DSItemID");
+
+                    b.HasIndex("DSItemSubID");
+
+                    b.HasIndex("DSTypeID");
+
+                    b.HasIndex("TransferOutTransactionID");
+
+                    b.HasIndex("MemberID", "CreatedDateTime");
 
                     b.ToTable("DSTransaction");
                 });
@@ -895,13 +905,50 @@ namespace Allinone.DLL.Migrations
 
             modelBuilder.Entity("Allinone.Domain.DS.Transactions.DSTransaction", b =>
                 {
+                    b.HasOne("Allinone.Domain.DS.Accounts.DSAccount", "DSAccount")
+                        .WithMany()
+                        .HasForeignKey("DSAccountID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Allinone.Domain.DS.DSItems.DSItem", "DSItem")
+                        .WithMany()
+                        .HasForeignKey("DSItemID")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Allinone.Domain.DS.DSItems.DSItemSub", "DSItemSub")
+                        .WithMany()
+                        .HasForeignKey("DSItemSubID")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Allinone.Domain.DS.Transactions.DSType", "DSType")
+                        .WithMany()
+                        .HasForeignKey("DSTypeID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("Allinone.Domain.Members.Member", "Member")
                         .WithMany()
                         .HasForeignKey("MemberID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Allinone.Domain.DS.Transactions.DSTransaction", "TransferOutTransaction")
+                        .WithMany()
+                        .HasForeignKey("TransferOutTransactionID")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("DSAccount");
+
+                    b.Navigation("DSItem");
+
+                    b.Navigation("DSItemSub");
+
+                    b.Navigation("DSType");
+
                     b.Navigation("Member");
+
+                    b.Navigation("TransferOutTransaction");
                 });
 
             modelBuilder.Entity("Allinone.Domain.Diarys.Diary", b =>

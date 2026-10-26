@@ -1,4 +1,4 @@
-﻿using Allinone.DLL.Data;
+using Allinone.DLL.Data;
 using Allinone.Domain.DS.Transactions;
 using Allinone.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -12,10 +12,12 @@ namespace Allinone.DLL.Repositories
         Task<IEnumerable<DSDebitStat>> GetDSMonthlyExpensesAsync(int year, int month, int memberId);
 
         Task<IEnumerable<DSTransactionDto>> GetAllByMemberIdAsync(int memberId);
-        Task<DSTransaction>? GetByTransferOutIdAsync(int id);
-        Task<DSTransaction>? GetAsync(int id);
-        Task<bool>? IsExistByMember(int memberid, int id);
+        Task<DSTransaction?> GetByTransferOutIdAsync(int id);
+        Task<DSTransaction?> GetAsync(int id);
+        Task<bool> IsExistByMember(int memberid, int id);
         Task<IEnumerable<DSTransaction>> GetAllAsync();
+
+        // Add/Update/Delete only track changes; callers commit through IUnitOfWork.SaveAsync.
         Task AddAsync(DSTransaction entity);
         void Update(DSTransaction entity);
         void Delete(DSTransaction entity);
@@ -23,33 +25,25 @@ namespace Allinone.DLL.Repositories
 
     public class DSTransactionRepository(DSContext context) : IDSTransactionRepository
     {
-        private static readonly List<int> _transferTypes = [3, 4];
+        private static readonly List<int> _transferTypes = [(int)EnumDSTranType.TransferOut, (int)EnumDSTranType.TransferIn];
         private static readonly List<int> _creditItems = [19];
 
         public async Task<DSYearExpenses> GetDSYearExpensesAsync(int year, int memberId)
         {
-            var responses = (
-                 from a in context.DSTransaction
-                 join b in context.DSItem on a.DSItemID equals b.ID into bb
-                 from b2 in bb.DefaultIfEmpty()
-                 join c in context.DSItemSub on a.DSItemSubID equals c.ID into cc
-                 from c2 in cc.DefaultIfEmpty()
-                 join d in context.DSItem on c2.DSItemID equals d.ID into dd
-                 from d2 in dd.DefaultIfEmpty()
-                 where
-                    a.MemberID == memberId &&
-                    a.DSTypeID == (int)EnumDSTranType.Expense &&
-                    (a.CreatedDateTime.Year == year)
-                 select new
-                 {
-                     DSItemName = b2.ID > 0 ? b2.Name : $"{d2.Name}",
-                     DSYearMonthOri = a.CreatedDateTime,
-                     DSYearMonth = $"{a.CreatedDateTime.Month}",
-                     //DSYearMonth = $"{a.CreatedDateTime.Year}-{a.CreatedDateTime.Month}",
-                     Amount = a.Amount,
-                 }).ToListAsync();
+            var res = await context.DSTransaction
+                .AsNoTracking()
+                .Where(a => a.MemberID == memberId
+                    && a.DSTypeID == (int)EnumDSTranType.Expense
+                    && a.CreatedDateTime.Year == year)
+                .Select(a => new
+                {
+                    DSItemName = a.DSItem != null ? a.DSItem.Name : a.DSItemSub!.DSItem.Name,
+                    DSYearMonthOri = a.CreatedDateTime,
+                    DSYearMonth = $"{a.CreatedDateTime.Month}",
+                    a.Amount,
+                })
+                .ToListAsync();
 
-            var res = await responses;
             var resGroupby = res.GroupBy(x => new { x.DSYearMonth, x.DSItemName }).
                 Select(y => new
                 {
@@ -76,33 +70,25 @@ namespace Allinone.DLL.Repositories
             }
             return dsYearExpenses;
         }
-        public async Task<IEnumerable<DSYearCreditDebitDiff>>         GetDSYearCreditDebitDiffAsync(int year, int memberId)
+
+        public async Task<IEnumerable<DSYearCreditDebitDiff>> GetDSYearCreditDebitDiffAsync(int year, int memberId)
         {
-            List<int> CreditDebitList = new List<int> { (int)EnumDSTranType.Income, (int)EnumDSTranType.Expense };
+            var res = await context.DSTransaction
+                .AsNoTracking()
+                .Where(a => a.MemberID == memberId
+                    && a.CreatedDateTime.Year == year
+                    && (a.DSTypeID == (int)EnumDSTranType.Expense
+                        || (a.DSTypeID == (int)EnumDSTranType.Income
+                            && _creditItems.Contains(a.DSItemID ?? a.DSItemSub!.DSItemID))))
+                .Select(a => new
+                {
+                    a.DSTypeID,
+                    DSYearMonthOri = a.CreatedDateTime,
+                    DSYearMonth = $"{a.CreatedDateTime.Year}-{a.CreatedDateTime.Month}",
+                    a.Amount,
+                })
+                .ToListAsync();
 
-            var responses = (
-                 from a in context.DSTransaction
-                 join b in context.DSItem on a.DSItemID equals b.ID into bb
-                 from b2 in bb.DefaultIfEmpty()
-                 join c in context.DSItemSub on a.DSItemSubID equals c.ID into cc
-                 from c2 in cc.DefaultIfEmpty()
-                 join d in context.DSItem on c2.DSItemID equals d.ID into dd
-                 from d2 in dd.DefaultIfEmpty()
-                 where
-                    a.MemberID == memberId &&
-                    (a.DSTypeID == (int)EnumDSTranType.Expense ||
-                    (a.DSTypeID == (int)EnumDSTranType.Income && _creditItems.Contains(b2 != null ? b2.ID : c2.DSItemID))) &&
-                    (a.CreatedDateTime.Year == year)
-                 select new
-                 {
-                     DSItemName = b2.ID > 0 ? b2.Name : $"{d2.Name}",
-                     a.DSTypeID,
-                     DSYearMonthOri = a.CreatedDateTime,
-                     DSYearMonth = $"{a.CreatedDateTime.Year}-{a.CreatedDateTime.Month}",
-                     Amount = a.Amount,
-                 }).ToListAsync();
-
-            var res = await responses;
             var resGroupby = res.GroupBy(x => new { x.DSYearMonth, x.DSTypeID }).
                 Select(y => new
                 {
@@ -110,119 +96,119 @@ namespace Allinone.DLL.Repositories
                     Type = y.First().DSTypeID,
                     Amount = y.Sum(x => x.Amount)
                 }).ToList();
-            List<DSYearCreditDebitDiff> dsYearCreditDebitDiff = new List<DSYearCreditDebitDiff>();
-            var ssssff = res.DistinctBy(x => x.DSYearMonth);
+
+            List<DSYearCreditDebitDiff> dsYearCreditDebitDiff = [];
             foreach (var yearMonth in res.OrderBy(x => x.DSYearMonthOri).DistinctBy(x => x.DSYearMonth).Select(x => x.DSYearMonth))
             {
-                var credit = resGroupby.FirstOrDefault(x => x.YearMonth == yearMonth && x.Type == (int)EnumDSTranType.Income)?.Amount;
-                var debit = resGroupby.FirstOrDefault(x => x.YearMonth == yearMonth && x.Type == (int)EnumDSTranType.Expense)?.Amount;
-                var diff = credit - debit;
+                var credit = resGroupby.FirstOrDefault(x => x.YearMonth == yearMonth && x.Type == (int)EnumDSTranType.Income)?.Amount ?? 0;
+                var debit = resGroupby.FirstOrDefault(x => x.YearMonth == yearMonth && x.Type == (int)EnumDSTranType.Expense)?.Amount ?? 0;
 
                 dsYearCreditDebitDiff.Add(new DSYearCreditDebitDiff
                 {
                     YearMonth = yearMonth,
-                    Credit = credit ?? 0,
-                    Debit = debit ?? 0,
-                    Diff = diff ?? 0
+                    Credit = credit,
+                    Debit = debit,
+                    Diff = credit - debit
                 });
             }
             return dsYearCreditDebitDiff;
         }
-        public async Task<IEnumerable<DSDebitStat>>         GetDSMonthlyExpensesAsync(int year, int month, int memberId)
-        {
-            var responses = (
-                 from a in context.DSTransaction
-                 join b in context.DSItem on a.DSItemID equals b.ID into bb
-                 from b2 in bb.DefaultIfEmpty()
-                 join c in context.DSItemSub on a.DSItemSubID equals c.ID into cc
-                 from c2 in cc.DefaultIfEmpty()
-                 join d in context.DSItem on c2.DSItemID equals d.ID into dd
-                 from d2 in dd.DefaultIfEmpty()
-                 where
-                    a.MemberID == memberId &&
-                    a.DSTypeID == (int)EnumDSTranType.Expense &&
-                    (a.CreatedDateTime.Year == year && a.CreatedDateTime.Month == month)
-                 select new DSDebitStat
-                 {
-                     DSItemName = b2.ID > 0 ? b2.Name : $"{d2.Name}",
-                     Amount = a.Amount,
-                 }).ToListAsync();
 
-            var res = await responses;
-            res = res.GroupBy(x => x.DSItemName).Select(y => new DSDebitStat { DSItemName = y.First().DSItemName, Amount = y.Sum(x => x.Amount) }).ToList();
-            return res.OrderByDescending(x => x.Amount);
+        public async Task<IEnumerable<DSDebitStat>> GetDSMonthlyExpensesAsync(int year, int month, int memberId)
+        {
+            var res = await context.DSTransaction
+                .AsNoTracking()
+                .Where(a => a.MemberID == memberId
+                    && a.DSTypeID == (int)EnumDSTranType.Expense
+                    && a.CreatedDateTime.Year == year
+                    && a.CreatedDateTime.Month == month)
+                .Select(a => new DSDebitStat
+                {
+                    DSItemName = a.DSItem != null ? a.DSItem.Name : a.DSItemSub!.DSItem.Name,
+                    Amount = a.Amount,
+                })
+                .ToListAsync();
+
+            return res
+                .GroupBy(x => x.DSItemName)
+                .Select(y => new DSDebitStat { DSItemName = y.Key, Amount = y.Sum(x => x.Amount) })
+                .OrderByDescending(x => x.Amount)
+                .ToList();
         }
 
         public async Task<IEnumerable<DSTransactionDto>> GetAllByMemberIdAsync(int memberId)
         {
-            var finalRes = new List<DSTransactionDto>();
+            var rows = await context.DSTransaction
+                .AsNoTracking()
+                .Where(a => a.MemberID == memberId)
+                .Select(a => new
+                {
+                    a.ID,
+                    a.DSTypeID,
+                    TypeName = a.DSType!.Name,
+                    a.DSAccountID,
+                    AccountName = a.DSAccount!.Name,
+                    a.DSItemID,
+                    a.DSItemSubID,
+                    SubItemParentID = a.DSItemSub != null ? (int?)a.DSItemSub.DSItemID : null,
+                    a.TransferOutTransactionID,
+                    ItemName = a.DSItem != null ? a.DSItem.Name : null,
+                    SubItemName = a.DSItemSub != null ? a.DSItemSub.Name : null,
+                    ParentItemName = a.DSItemSub != null ? a.DSItemSub.DSItem.Name : null,
+                    TransferFromAccountName = a.TransferOutTransaction != null ? a.TransferOutTransaction.DSAccount!.Name : null,
+                    a.Description,
+                    a.Amount,
+                    a.CreatedDateTime,
+                })
+                .ToListAsync();
 
-            var responses = (
-                 from a in context.DSTransaction
-                 join b in context.DSAccount on a.DSAccountID equals b.ID
-                 join c in context.DSType on a.DSTypeID equals c.ID
-                 join d in context.DSItem on a.DSItemID equals d.ID into dd
-                 from d2 in dd.DefaultIfEmpty()
-                 join e in context.DSItemSub on a.DSItemSubID equals e.ID into ee
-                 from e2 in ee.DefaultIfEmpty()
-                 join f in context.DSItem on e2.DSItemID equals f.ID into ff
-                 from f2 in ff.DefaultIfEmpty()
-                 join g in context.DSTransaction on a.DSTransferOutID equals g.ID into gg
-                 from g2 in gg.DefaultIfEmpty()
-                 join h in context.DSAccount on g2.DSAccountID equals h.ID into hh
-                 from h2 in hh.DefaultIfEmpty()
-                 where a.MemberID == memberId
-                 select new DSTransactionDto
-                 {
-                     DSTypeName = c.Name,
-                     DSAccountName = b.Name,
-                     CreatedDateTime = a.CreatedDateTime,
-                     CreatedDateTimeYearMonth = new DateTime(a.CreatedDateTime.Year, a.CreatedDateTime.Month, 1),
-                     DSItemName = c.ID == 4 ? h2.Name : d2.ID > 0 ? d2.Name : $"{f2.Name}|{e2.Name}",
-                     DSItemNameMain = d2 != null ? d2.Name : f2.Name,
-                     DSItemNameSub = d2 != null ? d2.Name : e2.Name,
-                     ID = a.ID,
-                     DSTypeID = a.DSTypeID,
-                     DSAccountID = a.DSAccountID,
-                     DSTransferOutID = a.DSTransferOutID,
-                     DSItemID = _transferTypes.Contains(c.ID) ? 0 : a.DSItemID > 0 ? a.DSItemID : e2 != null ? e2.DSItemID : 999,
-                     DSItemSubID = a.DSItemSubID,
-                     Description = a.Description,
-                     Amount = a.Amount,
-                 }).ToListAsync();
+            return rows.Select(a =>
+            {
+                var isTransfer = _transferTypes.Contains(a.DSTypeID);
+                var hasItem = a.ItemName != null;
 
-            var dsTransactions = await responses;
-            return dsTransactions;
+                return new DSTransactionDto
+                {
+                    ID = a.ID,
+                    DSTypeID = a.DSTypeID,
+                    DSTypeName = a.TypeName,
+                    DSAccountID = a.DSAccountID,
+                    DSAccountName = a.AccountName,
+                    DSItemID = isTransfer ? 0 : a.DSItemID ?? a.SubItemParentID ?? 999,
+                    DSItemSubID = a.DSItemSubID ?? 0,
+                    TransferOutTransactionID = a.TransferOutTransactionID ?? 0,
+                    DSItemName = a.DSTypeID == (int)EnumDSTranType.TransferIn
+                        ? a.TransferFromAccountName!
+                        : hasItem ? a.ItemName! : $"{a.ParentItemName}|{a.SubItemName}",
+                    DSItemNameMain = hasItem ? a.ItemName! : a.ParentItemName!,
+                    DSItemNameSub = hasItem ? a.ItemName! : a.SubItemName!,
+                    Description = a.Description,
+                    Amount = a.Amount,
+                    CreatedDateTime = a.CreatedDateTime,
+                    CreatedDateTimeYearMonth = new DateTime(a.CreatedDateTime.Year, a.CreatedDateTime.Month, 1),
+                };
+            }).ToList();
         }
 
-        public async Task<DSTransaction>? GetByTransferOutIdAsync(int id) =>
-            await context.DSTransaction.FirstOrDefaultAsync(x => x.DSTransferOutID == id);
+        public async Task<DSTransaction?> GetByTransferOutIdAsync(int id) =>
+            await context.DSTransaction.FirstOrDefaultAsync(x => x.TransferOutTransactionID == id);
 
-        public async Task<DSTransaction>? GetAsync(int id) =>
+        public async Task<DSTransaction?> GetAsync(int id) =>
             await context.DSTransaction.FindAsync(id);
 
-        public async Task<bool>? IsExistByMember(int memberid, int id) =>
+        public async Task<bool> IsExistByMember(int memberid, int id) =>
             await context.DSTransaction.AnyAsync(x => x.MemberID == memberid && x.ID == id);
 
         public async Task<IEnumerable<DSTransaction>> GetAllAsync() =>
             await context.DSTransaction.ToListAsync();
 
-        public async Task AddAsync(DSTransaction entity)
-        {
+        public async Task AddAsync(DSTransaction entity) =>
             await context.DSTransaction.AddAsync(entity);
-            await context.SaveChangesAsync();
-        }
 
-        public void Update(DSTransaction entity)
-        {
+        public void Update(DSTransaction entity) =>
             context.DSTransaction.Update(entity);
-            context.SaveChanges();
-        }
 
-        public void Delete(DSTransaction entity)
-        {
+        public void Delete(DSTransaction entity) =>
             context.DSTransaction.Remove(entity);
-            context.SaveChanges();
-        }
     }
 }

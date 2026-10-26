@@ -11,9 +11,8 @@ namespace Allinone.Domain.DS.Transactions
 
         public int DSAccountID { get; set; }
         public int DSAccountToID { get; set; }
-        public int DSTransferOutID { get; set; }
-        public int DSItemID { get; set; }
-        public int DSItemSubID { get; set; }
+        public int? DSItemID { get; set; }
+        public int? DSItemSubID { get; set; }
         public string? Description { get; set; }
 
         [Range(0.01, double.MaxValue, ErrorMessage = "Amount must be greater than zero.")]
