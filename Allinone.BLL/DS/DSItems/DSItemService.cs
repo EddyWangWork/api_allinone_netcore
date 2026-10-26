@@ -103,7 +103,9 @@ namespace Allinone.BLL.DS.DSItems
 
         public async Task<DSItem> Get(int id)
         {
-            return await dsItemRepository.GetAsync(id) ?? throw new DSItemNotFoundException();
+            if (MemberId == 0) throw new MemberNotFoundException();
+
+            return await dsItemRepository.GetByMemberAsync(MemberId, id) ?? throw new DSItemNotFoundException();
         }
 
         public async Task<DSItem> Add(DSItemAddReq req)
@@ -122,11 +124,11 @@ namespace Allinone.BLL.DS.DSItems
         {
             if (MemberId == 0) throw new MemberNotFoundException();
 
-            var entity = await dsItemRepository.GetAsync(id) ?? throw new DSItemNotFoundException();
+            var entity = await dsItemRepository.GetByMemberAsync(MemberId, id) ?? throw new DSItemNotFoundException();
 
             mapper.Map(req, entity);
 
-            dsItemRepository.Update(entity);
+            await dsItemRepository.Update(entity);
 
             return entity;
         }
@@ -135,9 +137,9 @@ namespace Allinone.BLL.DS.DSItems
         {
             if (MemberId == 0) throw new MemberNotFoundException();
 
-            var entity = await dsItemRepository.GetAsync(id) ?? throw new DSItemNotFoundException();
+            var entity = await dsItemRepository.GetByMemberAsync(MemberId, id) ?? throw new DSItemNotFoundException();
 
-            dsItemRepository.Delete(entity);
+            await dsItemRepository.Delete(entity);
 
             return entity;
         }
