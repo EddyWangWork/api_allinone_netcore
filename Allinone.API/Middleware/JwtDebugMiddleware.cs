@@ -54,7 +54,13 @@ namespace Allinone.API.Middleware
                 _logger.LogWarning("Authorization Header: Not Present");
             }
 
-            // Log authentication status AFTER authentication middleware runs
+            // UseAuthentication has already populated context.User; MemberId must be set before the controller runs
+            if (context.User?.Identity?.IsAuthenticated == true
+                && int.TryParse(context.User.FindFirst("MemberId")?.Value, out var currentMemberId))
+            {
+                BaseBLL.MemberId = currentMemberId;
+            }
+
             await _next(context);
 
             if (context.User?.Identity?.IsAuthenticated == true)
@@ -66,12 +72,6 @@ namespace Allinone.API.Middleware
                 foreach (var claim in context.User.Claims)
                 {
                     _logger.LogInformation($"  - {claim.Type}: {claim.Value}");
-                }
-
-                var memberId = context.User.FindFirst("MemberId")?.Value;
-                if (!string.IsNullOrEmpty(memberId))
-                {
-                    BaseBLL.MemberId = Convert.ToInt32(memberId);
                 }
             }
             else
