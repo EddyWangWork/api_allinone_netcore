@@ -1,7 +1,10 @@
-﻿namespace Allinone.Domain.Trips
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace Allinone.Domain.Trips
 {
     public class TripDetailTypeAddReq
     {
-        public string Name { get; set; }
+        [Required]
+        public string Name { get; set; } = string.Empty;
     }
 }

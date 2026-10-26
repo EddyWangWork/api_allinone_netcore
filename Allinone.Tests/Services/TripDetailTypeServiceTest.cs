@@ -73,7 +73,25 @@ namespace Allinone.Tests.Services
             var result = await _tripDetailTypeService.GetAllAsync();
 
             // Assert
-            Assert.NotNull(result);
+            Assert.Equal(2, result.Count());
+        }
+
+        [Fact]
+        public async Task Get_Returns_Success()
+        {
+            // Act
+            var result = await _tripDetailTypeService.Get(_tripDetailTypeId);
+
+            // Assert
+            Assert.Equal(_tripDetailTypeId, result.ID);
+            Assert.Equal(_tripDetailTypeName, result.Name);
+        }
+
+        [Fact]
+        public async Task Get_Returns_TripDetailTypeNotFoundException_When_Missing()
+        {
+            await Assert.ThrowsAsync<TripDetailTypeNotFoundException>(
+                () => _tripDetailTypeService.Get(3));
         }
 
         [Fact]

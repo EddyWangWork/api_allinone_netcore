@@ -11,60 +11,49 @@ namespace Allinone.API.Controllers
     public class TripDetailTypeController(ITripDetailTypeService tripDetailTypeService) : ControllerBase
     {
         [HttpGet]
-        [Route("GetTripDetailTypes")]
-        public async Task<IActionResult> GetTripDetailTypesAsync()
+        [HttpGet("GetTripDetailTypes")]
+        public async Task<ActionResult<IEnumerable<TripDetailType>>> GetTripDetailTypesAsync(
+            CancellationToken cancellationToken)
         {
-            var response = await tripDetailTypeService.GetAllAsync();
+            var response = await tripDetailTypeService.GetAllAsync(cancellationToken);
             return Ok(response);
         }
 
         [HttpPost]
-        [Route("addTripDetailType")]
-        public async Task<IActionResult> AddTripDetailType(TripDetailTypeAddReq req)
+        [HttpPost("addTripDetailType")]
+        public async Task<ActionResult<TripDetailType>> AddTripDetailType(
+            TripDetailTypeAddReq req,
+            CancellationToken cancellationToken)
         {
-            var response = await tripDetailTypeService.Add(req);
+            var response = await tripDetailTypeService.Add(req, cancellationToken);
             return Ok(response);
         }
 
         [HttpPut("updateTripDetailType/{id}")]
-        public async Task<IActionResult> UpdateTripDetailType(int id, TripDetailTypeAddReq req)
+        [HttpPut("{id}")]
+        public async Task<ActionResult<TripDetailType>> UpdateTripDetailType(
+            int id,
+            TripDetailTypeAddReq req,
+            CancellationToken cancellationToken)
         {
-            var response = await tripDetailTypeService.Update(id, req);
+            var response = await tripDetailTypeService.Update(id, req, cancellationToken);
             return Ok(response);
         }
 
         [HttpDelete("deleteTripDetailType/{id}")]
-        public async Task<IActionResult> DeleteTripDetailType(int id)
+        [HttpDelete("{id}")]
+        public async Task<ActionResult<TripDetailType>> DeleteTripDetailType(
+            int id,
+            CancellationToken cancellationToken)
         {
-            var response = await tripDetailTypeService.Delete(id);
+            var response = await tripDetailTypeService.Delete(id, cancellationToken);
             return Ok(response);
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> Get(int id)
+        public async Task<ActionResult<TripDetailType>> Get(int id, CancellationToken cancellationToken)
         {
-            var response = await tripDetailTypeService.Get(id);
-            return Ok(response);
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> Add(TripDetailTypeAddReq req)
-        {
-            var response = await tripDetailTypeService.Add(req);
-            return Ok(response);
-        }
-
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, TripDetailTypeAddReq req)
-        {
-            var response = await tripDetailTypeService.Update(id, req);
-            return Ok(response);
-        }
-
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
-        {
-            var response = await tripDetailTypeService.Delete(id);
+            var response = await tripDetailTypeService.Get(id, cancellationToken);
             return Ok(response);
         }
     }

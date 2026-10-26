@@ -6,41 +6,45 @@ namespace Allinone.DLL.Repositories
 {
     public interface ITripDetailTypeRepository
     {
-        Task<bool> IsExist(int id);
-        Task<TripDetailType>? GetAsync(int id);
-        Task<IEnumerable<TripDetailType>> GetAllAsync();
-        Task Add(TripDetailType entity);
-        void Update(TripDetailType entity);
-        void Delete(TripDetailType entity);
+        Task<bool> IsExist(int id, CancellationToken cancellationToken = default);
+        Task<TripDetailType?> GetAsync(int id, CancellationToken cancellationToken = default);
+        Task<IEnumerable<TripDetailType>> GetAllAsync(CancellationToken cancellationToken = default);
+        Task Add(TripDetailType entity, CancellationToken cancellationToken = default);
+        Task Update(TripDetailType entity, CancellationToken cancellationToken = default);
+        Task Delete(TripDetailType entity, CancellationToken cancellationToken = default);
     }
 
     public class TripDetailTypeRepository(DSContext context) : ITripDetailTypeRepository
     {
-        public async Task<bool> IsExist(int id) =>
-          await context.TripDetailType.AnyAsync(x => x.ID == id);
+        public Task<bool> IsExist(int id, CancellationToken cancellationToken = default) =>
+            context.TripDetailType.AnyAsync(x => x.ID == id, cancellationToken);
 
-        public async Task<TripDetailType>? GetAsync(int id) =>
-            await context.TripDetailType.FindAsync(id);
+        public async Task<TripDetailType?> GetAsync(int id, CancellationToken cancellationToken = default) =>
+            await context.TripDetailType.FindAsync(new object[] { id }, cancellationToken);
 
-        public async Task<IEnumerable<TripDetailType>> GetAllAsync() =>
-            await context.TripDetailType.ToListAsync();
+        public async Task<IEnumerable<TripDetailType>> GetAllAsync(CancellationToken cancellationToken = default) =>
+            await context.TripDetailType
+                .AsNoTracking()
+                .OrderBy(x => x.Name)
+                .ThenBy(x => x.ID)
+                .ToListAsync(cancellationToken);
 
-        public async Task Add(TripDetailType entity)
+        public async Task Add(TripDetailType entity, CancellationToken cancellationToken = default)
         {
-            await context.TripDetailType.AddAsync(entity);
-            await context.SaveChangesAsync();
+            await context.TripDetailType.AddAsync(entity, cancellationToken);
+            await context.SaveChangesAsync(cancellationToken);
         }
 
-        public void Update(TripDetailType entity)
+        public async Task Update(TripDetailType entity, CancellationToken cancellationToken = default)
         {
             context.TripDetailType.Update(entity);
-            context.SaveChanges();
+            await context.SaveChangesAsync(cancellationToken);
         }
 
-        public void Delete(TripDetailType entity)
+        public async Task Delete(TripDetailType entity, CancellationToken cancellationToken = default)
         {
             context.TripDetailType.Remove(entity);
-            context.SaveChanges();
+            await context.SaveChangesAsync(cancellationToken);
         }
     }
 }
