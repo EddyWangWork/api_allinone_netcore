@@ -10,15 +10,9 @@ namespace Allinone.API.Controllers
     [Route("[controller]")]
     public class KanbanController(IKanbanService kanbanService) : ControllerBase
     {
+        // "GetKanbans" route kept for backward compatibility
         [HttpGet]
-        [Route("GetKanbans")]
-        public async Task<IActionResult> GetKanbansAsync()
-        {
-            var response = await kanbanService.GetKanbansAsync();
-            return Ok(response);
-        }
-
-        [HttpGet]
+        [HttpGet("GetKanbans")]
         public async Task<IActionResult> GetKanbans()
         {
             var response = await kanbanService.GetKanbansAsync();

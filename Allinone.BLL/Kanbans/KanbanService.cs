@@ -26,9 +26,21 @@ namespace Allinone.BLL.Kanbans
                         .Select(group => new KanbanDto
                         {
                             Status = group.Key,
-                            KanbanDetails = [.. group]
-                        });
+                            KanbanDetails = [.. group.Select(ToDetailDto)]
+                        })
+                        .ToList();
         }
+
+        private static KanbanDetailDto ToDetailDto(Kanban x) => new()
+        {
+            ID = x.ID,
+            Type = x.Type,
+            Title = x.Title,
+            Content = x.Content,
+            Status = x.Status,
+            Priority = x.Priority,
+            UpdatedTime = x.UpdatedTime
+        };
 
         public async Task<Kanban> Get(int id)
         {
@@ -56,7 +68,7 @@ namespace Allinone.BLL.Kanbans
 
             mapper.Map(req, entity);
 
-            kanbanRepository.Update(entity);
+            await kanbanRepository.Update(entity);
 
             return entity;
         }
@@ -67,7 +79,7 @@ namespace Allinone.BLL.Kanbans
 
             var entity = await kanbanRepository.GetByMemberAsync(MemberId, id) ?? throw new KanbanNotFoundException();
 
-            kanbanRepository.Delete(entity);
+            await kanbanRepository.Delete(entity);
 
             return entity;
         }
